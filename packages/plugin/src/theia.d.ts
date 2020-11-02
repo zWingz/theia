@@ -3464,6 +3464,8 @@ declare module '@theia/plugin' {
      */
     export namespace window {
 
+        export let activeColorTheme: ColorTheme;
+
         /**
          * The currently active terminal or undefined. The active terminal is the one
          * that currently has focus or most recently had focus.

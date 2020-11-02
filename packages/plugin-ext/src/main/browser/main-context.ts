@@ -159,4 +159,7 @@ export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container
 
     const timelineMain = new TimelineMainImpl(rpc, container);
     rpc.set(PLUGIN_RPC_CONTEXT.TIMELINE_MAIN, timelineMain);
+
+    const themingMain = new ThemingMainImpl(rpc, container);
+    rpc.set(PLUGIN_RPC_CONTEXT.THEMING_MAIN, themingMain);
 }

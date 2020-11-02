@@ -162,6 +162,7 @@ import { WebviewsExtImpl } from './webviews';
 import { ExtHostFileSystemEventService } from './file-system-event-service-ext-impl';
 import { LabelServiceExtImpl } from '../plugin/label-service';
 import { TimelineExtImpl } from './timeline';
+import { ThemingExtImpl } from './theming';
 
 export function createAPIFactory(
     rpc: RPCProtocol,
@@ -197,6 +198,7 @@ export function createAPIFactory(
     const decorationsExt = rpc.set(MAIN_RPC_CONTEXT.DECORATIONS_EXT, new DecorationsExtImpl(rpc));
     const labelServiceExt = rpc.set(MAIN_RPC_CONTEXT.LABEL_SERVICE_EXT, new LabelServiceExtImpl(rpc));
     const timelineExt = rpc.set(MAIN_RPC_CONTEXT.TIMELINE_EXT, new TimelineExtImpl(rpc, commandRegistry));
+    const themingExt = rpc.set(MAIN_RPC_CONTEXT.THEMING_EXT, new ThemingExtImpl(rpc));
     rpc.set(MAIN_RPC_CONTEXT.DEBUG_EXT, debugExt);
 
     return function (plugin: InternalPlugin): typeof theia {
@@ -285,7 +287,9 @@ export function createAPIFactory(
         const showWarningMessage = messageRegistryExt.showMessage.bind(messageRegistryExt, MainMessageType.Warning);
         const showErrorMessage = messageRegistryExt.showMessage.bind(messageRegistryExt, MainMessageType.Error);
         const window: typeof theia.window = {
-
+            get activeColorTheme() {
+                return themingExt.getActiveColorTheme();
+            },
             get activeTerminal(): TerminalExtImpl | undefined {
                 return terminalExt.activeTerminal;
             },

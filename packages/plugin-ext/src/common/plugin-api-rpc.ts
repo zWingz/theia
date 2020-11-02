@@ -67,7 +67,8 @@ import {
     SearchInWorkspaceResult,
     AuthenticationSession,
     AuthenticationSessionsChangeEvent,
-    AuthenticationProviderInformation
+    AuthenticationProviderInformation,
+    ColorTheme
 } from './plugin-api-rpc-model';
 import { ExtPluginApi } from './plugin-ext-api-contribution';
 import { KeysToAnyValues, KeysToKeysToAnyValue } from './types';
@@ -1492,7 +1493,8 @@ export const PLUGIN_RPC_CONTEXT = {
     WINDOW_MAIN: createProxyIdentifier<WindowMain>('WindowMain'),
     CLIPBOARD_MAIN: <ProxyIdentifier<ClipboardMain>>createProxyIdentifier<ClipboardMain>('ClipboardMain'),
     LABEL_SERVICE_MAIN: <ProxyIdentifier<LabelServiceMain>>createProxyIdentifier<LabelServiceMain>('LabelServiceMain'),
-    TIMELINE_MAIN: <ProxyIdentifier<TimelineMain>>createProxyIdentifier<TimelineMain>('TimelineMain')
+    TIMELINE_MAIN: <ProxyIdentifier<TimelineMain>>createProxyIdentifier<TimelineMain>('TimelineMain'),
+    THEMING_MAIN: createProxyIdentifier<ThemingMain>('ThemingMain')
 };
 
 export const MAIN_RPC_CONTEXT = {
@@ -1521,7 +1523,8 @@ export const MAIN_RPC_CONTEXT = {
     SCM_EXT: createProxyIdentifier<ScmExt>('ScmExt'),
     DECORATIONS_EXT: createProxyIdentifier<DecorationsExt>('DecorationsExt'),
     LABEL_SERVICE_EXT: createProxyIdentifier<LabelServiceExt>('LabelServiceExt'),
-    TIMELINE_EXT: createProxyIdentifier<TimelineExt>('TimeLineExt')
+    TIMELINE_EXT: createProxyIdentifier<TimelineExt>('TimeLineExt'),
+    THEMING_EXT: createProxyIdentifier<ThemingExt>('ThemingExt')
 };
 
 export interface TasksExt {
@@ -1540,6 +1543,14 @@ export interface TasksMain {
     $taskExecutions(): Promise<TaskExecutionDto[]>;
     $unregister(handle: number): void;
     $terminateTask(id: number): void;
+}
+
+export interface ThemingExt {
+    $activeColorTheme(): ColorTheme;
+}
+
+export interface ThemingMain {
+    $getActiveColorTheme(): ColorTheme;
 }
 
 export interface AuthenticationExt {

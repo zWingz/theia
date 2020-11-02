@@ -562,3 +562,13 @@ export interface AuthenticationProviderInformation {
     id: string;
     label: string;
 }
+
+export enum ColorThemeKind {
+    Light = 1,
+    Dark = 2,
+    HighContrast = 3
+}
+
+export interface ColorTheme {
+    kind: ColorThemeKind;
+}
