@@ -15,6 +15,7 @@
  ********************************************************************************/
 
 import { injectable, inject } from 'inversify';
+import { remote } from 'electron';
 import { NewWindowOptions } from '../../browser/window/window-service';
 import { DefaultWindowService } from '../../browser/window/default-window-service';
 import { ElectronMainWindowService } from '../../electron-common/electron-main-window-service';
@@ -30,9 +31,28 @@ export class ElectronWindowService extends DefaultWindowService {
         return undefined;
     }
 
+    registerUnloadListener(): void {
+        // NOOP. The unload logic is handled in the `preventUnload` when running the app in electron env.
+    }
+
     protected preventUnload(event: BeforeUnloadEvent): string | void {
-        // The user will be shown a confirmation dialog by the will-prevent-unload handler in the Electron main script
-        event.returnValue = false;
+        const electronWindow = remote.getCurrentWindow();
+        const response = remote.dialog.showMessageBoxSync(electronWindow, {
+            type: 'question',
+            buttons: ['Yes', 'No'],
+            title: 'Confirm',
+            message: 'Are you sure you want to quit?',
+            detail: 'Any unsaved changes will not be saved.'
+        });
+        if (response === 0) { // 'Yes', close the window.
+            this.fireUnload();
+            // The absence of a `returnValue` property on the event will guarantee the browser `unload` happens.
+            // See: https://developer.mozilla.org/en-US/docs/Web/API/WindowEventHandlers/onbeforeunload
+            delete event.returnValue;
+        } else {
+            event.preventDefault();
+            event.returnValue = true;
+        }
     }
 
 }
