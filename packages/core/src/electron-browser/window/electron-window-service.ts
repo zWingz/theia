@@ -31,11 +31,25 @@ export class ElectronWindowService extends DefaultWindowService {
         return undefined;
     }
 
-    registerUnloadListener(): void {
-        // NOOP. The unload logic is handled in the `preventUnload` when running the app in electron env.
+    registerUnloadListeners(): void {
+        window.addEventListener('beforeunload', event => {
+            if (this.canUnload() || this.shouldUnload()) {
+                // Either we can unload, or the user confirms that he wants to quit;
+                // We are unloading:
+                delete event.returnValue;
+                this.onUnloadEmitter.fire();
+            } else {
+                // The user wants to stay, let's prevent unloading:
+                return this.preventUnload(event);
+            }
+        });
     }
 
-    protected preventUnload(event: BeforeUnloadEvent): string | void {
+    /**
+     * When preventing `beforeunload` on Electron, no popup is shown.
+     * This method implements a modal to ask the user if he wants to quit the page.
+     */
+    protected shouldUnload(): boolean {
         const electronWindow = remote.getCurrentWindow();
         const response = remote.dialog.showMessageBoxSync(electronWindow, {
             type: 'question',
@@ -44,15 +58,6 @@ export class ElectronWindowService extends DefaultWindowService {
             message: 'Are you sure you want to quit?',
             detail: 'Any unsaved changes will not be saved.'
         });
-        if (response === 0) { // 'Yes', close the window.
-            this.fireUnload();
-            // The absence of a `returnValue` property on the event will guarantee the browser `unload` happens.
-            // See: https://developer.mozilla.org/en-US/docs/Web/API/WindowEventHandlers/onbeforeunload
-            delete event.returnValue;
-        } else {
-            event.preventDefault();
-            event.returnValue = true;
-        }
+        return response === 0; // 'Yes', close the window.
     }
-
 }
