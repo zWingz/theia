@@ -20,6 +20,7 @@ import * as https from 'https';
 import * as express from 'express';
 import * as yargs from 'yargs';
 import * as fs from 'fs-extra';
+import * as os from 'os';
 import { performance, PerformanceObserver } from 'perf_hooks';
 import { inject, named, injectable, postConstruct } from 'inversify';
 import { ContributionProvider, MaybePromise } from '../common';
@@ -28,6 +29,7 @@ import { Deferred } from '../common/promise-util';
 import { environment } from '../common/index';
 import { AddressInfo } from 'net';
 import { ApplicationPackage } from '@theia/application-package';
+import { ProcessUtils } from './process-utils';
 
 const APP_PROJECT_PATH = 'app-project-path';
 
@@ -148,6 +150,9 @@ export class BackendApplication {
     @inject(ApplicationPackage)
     protected readonly applicationPackage: ApplicationPackage;
 
+    @inject(ProcessUtils)
+    protected readonly processUtils: ProcessUtils;
+
     private readonly _performanceObserver: PerformanceObserver;
 
     constructor(
@@ -169,13 +174,21 @@ export class BackendApplication {
         process.on('SIGPIPE', () => {
             console.error(new Error('Unexpected SIGPIPE'));
         });
-
+        /**
+         * Kill the current process tree on exit.
+         */
+        function signalHandler(signal: NodeJS.Signals): never {
+            const code = process.platform === 'win32'
+                ? 1 // Windows always seem to exit with 1
+                : 128 + (os.constants.signals[signal] ?? -127);
+            process.exit(code);
+        }
         // Handles normal process termination.
         process.on('exit', () => this.onStop());
         // Handles `Ctrl+C`.
-        process.on('SIGINT', () => process.exit(0));
+        process.on('SIGINT', signalHandler);
         // Handles `kill pid`.
-        process.on('SIGTERM', () => process.exit(0));
+        process.on('SIGTERM', signalHandler);
 
         // Create performance observer
         this._performanceObserver = new PerformanceObserver(list => {
@@ -316,6 +329,7 @@ export class BackendApplication {
         }
         console.info('<<< All backend contributions have been stopped.');
         this._performanceObserver.disconnect();
+        this.processUtils.terminateProcessTree(process.pid);
     }
 
     protected async serveGzipped(contentType: string, req: express.Request, res: express.Response, next: express.NextFunction): Promise<void> {
