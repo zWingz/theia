@@ -19,16 +19,39 @@ import {
     MAIN_RPC_CONTEXT,
     TaskExecutionDto,
     TasksExt,
-    TaskDto
+    TaskDto,
+    TaskPresentationOptionsDTO
 } from '../../common/plugin-api-rpc';
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common';
 import { TaskProviderRegistry, TaskResolverRegistry, TaskProvider, TaskResolver } from '@theia/task/lib/browser/task-contribution';
 import { interfaces } from '@theia/core/shared/inversify';
-import { TaskInfo, TaskExitedEvent, TaskConfiguration, TaskCustomization } from '@theia/task/lib/common/task-protocol';
+import { TaskInfo, TaskExitedEvent, TaskConfiguration, TaskCustomization, TaskOutputPresentation, RevealKind, PanelKind} from '@theia/task/lib/common/task-protocol';
 import { TaskWatcher } from '@theia/task/lib/common/task-watcher';
 import { TaskService } from '@theia/task/lib/browser/task-service';
 import { TaskDefinitionRegistry } from '@theia/task/lib/browser';
+
+const revealKindMap = new Map<number | RevealKind, RevealKind | number>(
+    [
+        [1, RevealKind.Always],
+        [2, RevealKind.Silent],
+        [3, RevealKind.Never],
+        [RevealKind.Always, 1],
+        [RevealKind.Silent, 2],
+        [RevealKind.Never, 3]
+    ]
+);
+
+const panelKindMap = new Map<number | PanelKind, PanelKind | number>(
+    [
+        [1, PanelKind.Shared],
+        [2, PanelKind.Dedicated],
+        [3, PanelKind.New],
+        [PanelKind.Shared, 1],
+        [PanelKind.Dedicated, 2],
+        [PanelKind.New, 3]
+    ]
+);
 
 export class TasksMainImpl implements TasksMain, Disposable {
     private readonly proxy: TasksExt;
@@ -175,10 +198,12 @@ export class TasksMainImpl implements TasksMain, Disposable {
     }
 
     protected toTaskConfiguration(taskDto: TaskDto): TaskConfiguration {
-        const { group, ...taskConfiguration } = taskDto;
+        const { group, presentation, ...taskConfiguration } = taskDto;
         if (group === 'build' || group === 'test') {
             taskConfiguration.group = group;
         }
+
+        this.convertTaskPresentation(taskConfiguration, presentation);
 
         return Object.assign(taskConfiguration, {
             _source: taskConfiguration.source,
@@ -187,7 +212,7 @@ export class TasksMainImpl implements TasksMain, Disposable {
     }
 
     protected fromTaskConfiguration(task: TaskConfiguration): TaskDto {
-        const { group, ...taskDto } = task;
+        const { group, presentation, ...taskDto } = task;
         if (group) {
             if (TaskCustomization.isBuildTask(task)) {
                 taskDto.group = 'build';
@@ -196,10 +221,25 @@ export class TasksMainImpl implements TasksMain, Disposable {
             }
         }
 
+        this.convertTaskPresentation(taskDto, presentation);
+
         return Object.assign(taskDto, {
             source: taskDto._source,
             scope: taskDto._scope
         });
     }
 
+    private convertTaskPresentation(task: TaskConfiguration | TaskDto,
+        presentationFrom: TaskOutputPresentation | TaskPresentationOptionsDTO | undefined): void {
+        if (presentationFrom) {
+            const { reveal, panel, ...presentationTo } = presentationFrom;
+            if (reveal) {
+                Object.assign(presentationTo, { reveal: revealKindMap.get(reveal) });
+            }
+            if (panel) {
+                Object.assign(presentationTo, { panel: panelKindMap.get(panel) });
+            }
+            Object.assign(task, { presentation: presentationTo });
+        }
+    }
 }
