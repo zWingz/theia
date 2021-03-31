@@ -26,7 +26,7 @@ import { RPCProtocol } from '../../common/rpc-protocol';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common';
 import { TaskProviderRegistry, TaskResolverRegistry, TaskProvider, TaskResolver } from '@theia/task/lib/browser/task-contribution';
 import { interfaces } from '@theia/core/shared/inversify';
-import { TaskInfo, TaskExitedEvent, TaskConfiguration, TaskCustomization, TaskOutputPresentation, RevealKind, PanelKind} from '@theia/task/lib/common/task-protocol';
+import { TaskInfo, TaskExitedEvent, TaskConfiguration, TaskCustomization, TaskOutputPresentation, RevealKind, PanelKind } from '@theia/task/lib/common/task-protocol';
 import { TaskWatcher } from '@theia/task/lib/common/task-watcher';
 import { TaskService } from '@theia/task/lib/browser/task-service';
 import { TaskDefinitionRegistry } from '@theia/task/lib/browser';
@@ -198,48 +198,62 @@ export class TasksMainImpl implements TasksMain, Disposable {
     }
 
     protected toTaskConfiguration(taskDto: TaskDto): TaskConfiguration {
-        const { group, presentation, ...taskConfiguration } = taskDto;
-        if (group === 'build' || group === 'test') {
-            taskConfiguration.group = group;
+        const { group, presentation, scope, source, ...common } = taskDto;
+        const partialConfig: Partial<TaskConfiguration> = {};
+        if (presentation) {
+            partialConfig.presentation = this.convertTaskPresentation(presentation);
         }
-
-        this.convertTaskPresentation(taskConfiguration, presentation);
-
-        return Object.assign(taskConfiguration, {
-            _source: taskConfiguration.source,
-            _scope: taskConfiguration.scope
-        });
+        if (group === 'build' || group === 'test') {
+            partialConfig.group = group;
+        }
+        return {
+            ...common,
+            ...partialConfig,
+            _scope: scope,
+            _source: source,
+        };
     }
 
     protected fromTaskConfiguration(task: TaskConfiguration): TaskDto {
-        const { group, presentation, ...taskDto } = task;
+        const { group, presentation, _scope, _source, ...common } = task;
+        const partialDto: Partial<TaskDto> = {};
+        if (presentation) {
+            partialDto.presentation = this.convertTaskPresentation(presentation);
+        }
         if (group) {
             if (TaskCustomization.isBuildTask(task)) {
-                taskDto.group = 'build';
+                partialDto.group = 'build';
             } else if (TaskCustomization.isTestTask(task)) {
-                taskDto.group = 'test';
+                partialDto.group = 'test';
             }
         }
-
-        this.convertTaskPresentation(taskDto, presentation);
-
-        return Object.assign(taskDto, {
-            source: taskDto._source,
-            scope: taskDto._scope
-        });
+        return {
+            ...common,
+            ...partialDto,
+            scope: _scope,
+            source: _source,
+        };
     }
 
-    private convertTaskPresentation(task: TaskConfiguration | TaskDto,
-        presentationFrom: TaskOutputPresentation | TaskPresentationOptionsDTO | undefined): void {
+    private convertTaskPresentation(presentationFrom: undefined): undefined;
+    private convertTaskPresentation(presentationFrom: TaskOutputPresentation): TaskPresentationOptionsDTO;
+    private convertTaskPresentation(presentationFrom: TaskPresentationOptionsDTO): TaskOutputPresentation;
+    private convertTaskPresentation(
+        presentationFrom: TaskOutputPresentation | TaskPresentationOptionsDTO | undefined
+    ): TaskOutputPresentation | TaskPresentationOptionsDTO | undefined {
         if (presentationFrom) {
-            const { reveal, panel, ...presentationTo } = presentationFrom;
+            const { reveal, panel, ...common } = presentationFrom;
+            const presentationTo: Partial<TaskOutputPresentation | TaskPresentationOptionsDTO> = {};
             if (reveal) {
-                Object.assign(presentationTo, { reveal: revealKindMap.get(reveal) });
+                presentationTo.reveal = revealKindMap.get(reveal);
             }
             if (panel) {
-                Object.assign(presentationTo, { panel: panelKindMap.get(panel) });
+                presentationTo.panel = panelKindMap.get(panel)!;
             }
-            Object.assign(task, { presentation: presentationTo });
+            return {
+                ...common,
+                ...presentationTo,
+            };
         }
     }
 }
