@@ -20,6 +20,7 @@ import { FileUri } from '@theia/core/lib/node/file-uri';
 import URI from '@theia/core/lib/common/uri';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { SearchInWorkspaceServer, SearchInWorkspaceOptions, SearchInWorkspaceResult, SearchInWorkspaceClient, LinePreview } from '../common/search-in-workspace-interface';
+import { RipgrepSearchUtils } from './ripgrep-search-utils';
 
 export const RgPath = Symbol('RgPath');
 
@@ -94,45 +95,96 @@ export class RipgrepSearchInWorkspaceServer implements SearchInWorkspaceServer {
     }
 
     protected getArgs(options?: SearchInWorkspaceOptions): string[] {
-        const args = ['--hidden', '--json'];
-        args.push(options && options.matchCase ? '--case-sensitive' : '--ignore-case');
+        const args = new Set<string>();
+
+        const appendGlobArgs = (rawPatterns: string[], exclude: boolean) => {
+            rawPatterns.forEach(rawPattern => {
+                if (rawPattern !== '') {
+                    const globArguments = this.patternToGlobCLIArguments(rawPattern, exclude);
+                    globArguments.forEach(arg => args.add(arg));
+                }
+            });
+        };
+
+        args.add('--hidden');
+        args.add('--json');
+
+        if (options && options.matchCase) {
+            args.add('--case-sensitive');
+        } else {
+            args.add('--ignore-case');
+        }
+
         if (options && options.includeIgnored) {
-            args.push('--no-ignore');
+            args.add('--no-ignore');
         }
         if (options && options.maxFileSize) {
-            args.push('--max-filesize=' + options.maxFileSize.trim());
+            args.add('--max-filesize=' + options.maxFileSize.trim());
         } else {
-            args.push('--max-filesize=20M');
+            args.add('--max-filesize=20M');
         }
+
         if (options && options.include) {
-            for (const include of options.include) {
-                if (include !== '') {
-                    args.push('--glob=**/' + include);
-                }
-            }
+            appendGlobArgs(options.include, false);
         }
+
         if (options && options.exclude) {
-            for (const exclude of options.exclude) {
-                if (exclude !== '') {
-                    args.push('--glob=!**/' + exclude);
-                }
-            }
+            appendGlobArgs(options.exclude, true);
         }
+
         if (options && options.useRegExp || options && options.matchWholeWord) {
-            args.push('--regexp');
+            args.add('--regexp');
         } else {
-            args.push('--fixed-strings');
-            args.push('--');
+            args.add('--fixed-strings');
+            args.add('--');
         }
-        return args;
+
+        return Array.from(args);
     }
 
-    // Search for the string WHAT in directories ROOTURIS.  Return the assigned search id.
+    /**
+     * Transforms a given file pattern to 'ripgrep' glob CLI arguments.
+     */
+    protected patternToGlobCLIArguments(pattern: string, exclude: boolean): string[] {
+        const globCommandArgument = '--glob=';
+        const excludeChar = exclude ? '!' : '';
+        const subDirGlobPattern = '**/';
+
+        const subDirGlobPrefix = pattern.startsWith('/') ? '**' : subDirGlobPattern;
+        const updatedPattern = pattern.startsWith(subDirGlobPattern) ? pattern : `${subDirGlobPrefix}${pattern}`;
+
+        const globArgument = `${globCommandArgument}${excludeChar}${updatedPattern}`;
+
+        const globArgumentsArray = [globArgument];
+        if (!globArgument.endsWith('*')) {
+            // Add a generic glob CLI argument entry to include files inside a given directory.
+            const suffix = globArgument.endsWith('/') ? '*' : '/*';
+            globArgumentsArray.push(`${globArgument}${suffix}`);
+        }
+
+        return globArgumentsArray;
+    };
+
+    /**
+     * By default, sets the search directories for the string WHAT to the provided ROOTURIS directories
+     * and returns the assigned search id.
+     *
+     * The include / exclude (options in SearchInWorkspaceOptions) are lists of patterns for files to
+     * include / exclude during search (glob characters are allowed).
+     *
+     * include patterns successfully recognized as absolute paths will override the default search and set
+     * the search directories to the ones provided as includes.
+     * Relative paths are allowed, the application will attempt to translate them to valid absolute paths
+     * based on the applicable search directories.
+     */
     search(what: string, rootUris: string[], opts?: SearchInWorkspaceOptions): Promise<number> {
         // Start the rg process.  Use --vimgrep to get one result per
         // line, --color=always to get color control characters that
         // we'll use to parse the lines.
         const searchId = this.nextSearchId++;
+        const rootPaths = rootUris.map(root => FileUri.fsPath(root));
+        const searchPaths: string[] = this.resolveSearchPathsFromIncludes(rootPaths, opts);
+        this.includesExcludesToAbsolute(searchPaths, opts);
         const rgArgs = this.getArgs(opts);
         // if we use matchWholeWord we use regExp internally,
         // so, we need to escape regexp characters if we actually not set regexp true in UI.
@@ -146,7 +198,7 @@ export class RipgrepSearchInWorkspaceServer implements SearchInWorkspaceServer {
             }
         }
 
-        const args = [...rgArgs, what].concat(rootUris.map(root => FileUri.fsPath(root)));
+        const args = [...rgArgs, what, ...searchPaths];
         const processOptions: RawProcessOptions = {
             command: this.rgPath,
             args
@@ -288,6 +340,53 @@ export class RipgrepSearchInWorkspaceServer implements SearchInWorkspaceServer {
         });
 
         return Promise.resolve(searchId);
+    }
+
+    /**
+     * The default search paths are set to be the root paths associated to a workspace
+     * however the search scope can be further refined with the include paths available in the search options.
+     * This method will replace the searching paths to the ones specified in the 'include' options but as long
+     * as the 'include' paths can be successfully validated as existing.
+     *
+     * Therefore the returned array of paths can be either the workspace root paths or a set of validated paths
+     * derived from the include options which can be used to perform the search.
+     *
+     * Any pattern that resulted in a valid search path will be removed from the 'include' list as it is
+     * provided as an equivalent search path instead.
+     */
+    protected resolveSearchPathsFromIncludes(rootPaths: string[], opts: SearchInWorkspaceOptions | undefined): string[] {
+        if (!opts || !opts.include) {
+            return rootPaths;
+        }
+
+        const { convertedPatterns, resolvedPaths } = RipgrepSearchUtils.resolvePatternsToPaths(opts.include, rootPaths);
+
+        // Remove file patterns that were successfully translated to search paths.
+        opts.include = opts.include.filter(item => !convertedPatterns.has(item));
+
+        return resolvedPaths.size > 0 ? Array.from(resolvedPaths) : rootPaths;
+    }
+
+    /**
+     * Transform include/exclude option patterns from relative patterns to absolute patterns.
+     * E.g. './abc/foo.*' to '${root}/abc/foo.*', the transformation does not validate the
+     * pattern against the file system as glob suffixes remain.
+     */
+    protected includesExcludesToAbsolute(searchPaths: string[], opts: SearchInWorkspaceOptions | undefined): void {
+        [true, false].forEach(isInclude => {
+            const patterns = isInclude ? opts?.include : opts?.exclude;
+            if (!patterns) {
+                return;
+            }
+
+            const updatedPatterns = RipgrepSearchUtils.replaceRelativeToAbsolute(patterns, searchPaths);
+
+            if (isInclude) {
+                opts!.include = updatedPatterns;
+            } else {
+                opts!.exclude = updatedPatterns;
+            }
+        });
     }
 
     /**

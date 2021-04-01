@@ -290,7 +290,8 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
             }
             return workspaceRootUri.toString().concat(pattern.replace('./', '/'));
         }
-        return globalPrefix.concat(pattern);
+
+        return pattern.startsWith('/') ? '**'.concat(pattern) : globalPrefix.concat(pattern);
     }
 
     /**
@@ -517,13 +518,8 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
 
         // Exclude files already covered by searching open editors.
         this.editorManager.all.forEach(e => {
-            const rootUri = this.workspaceService.getWorkspaceRootUri(e.editor.uri);
-            if (rootUri) {
-                // Exclude pattern beginning with './' works after the fix of #8469.
-                const { name, path } = this.filenameAndPath(e.editor.uri.toString(), rootUri.toString());
-                const excludePath: string = path === '' ? './' + name : path + '/' + name;
-                searchOptions.exclude = (searchOptions.exclude) ? searchOptions.exclude.concat(excludePath) : [excludePath];
-            }
+            const excludePath: string = e.editor.uri.path.toString();
+            searchOptions.exclude = (searchOptions.exclude) ? searchOptions.exclude.concat(excludePath) : [excludePath];
         });
 
         // Reduce `maxResults` due to editor results.
