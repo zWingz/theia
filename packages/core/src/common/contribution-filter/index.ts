@@ -17,4 +17,4 @@
 export * from './contribution-filter';
 export * from './contribution-filter-registry';
 export * from './filter';
-export * from './string-based-filter';
+export * from './string-utils';

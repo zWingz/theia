@@ -13,14 +13,20 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
-import { Command, CommandContribution, CommandRegistry, ContributionFilter, equals, NameBasedContributionFilter } from '@theia/core/lib/common';
+import { Command, CommandContribution, CommandRegistry, ContributionFilter } from '@theia/core/lib/common';
 import { injectable, interfaces } from '@theia/core/shared/inversify';
+
 export namespace SampleFilteredCommand {
     const EXAMPLE_CATEGORY = 'Examples';
     export const FILTERED: Command = {
         id: 'example_command.filtered',
         category: EXAMPLE_CATEGORY,
         label: 'This command should be filtered out'
+    };
+    export const FILTERED2: Command = {
+        id: 'example_command.filtered2',
+        category: EXAMPLE_CATEGORY,
+        label: 'This command should be filtered out (2)'
     };
 }
 
@@ -29,22 +35,44 @@ export namespace SampleFilteredCommand {
  */
 @injectable()
 export class SampleFilteredCommandContribution implements CommandContribution {
-
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(SampleFilteredCommand.FILTERED, { execute: () => { } });
     }
 }
 
+/**
+ * Second sample command contribution that should be excluded.
+ */
 @injectable()
-export class SampleFilteredCommandContributionFilter extends NameBasedContributionFilter {
+export class SampleFilteredCommandContribution2 implements CommandContribution {
+    registerCommands(commands: CommandRegistry): void {
+        commands.registerCommand(SampleFilteredCommand.FILTERED2, { execute: () => { } });
+    }
+}
+
+@injectable()
+export class SampleFilteredCommandContributionFilter implements ContributionFilter {
 
     contributions = [CommandContribution];
-    doTest(toTest: string): boolean {
-        return equals(toTest, false, 'SampleFilteredCommandContribution');
+
+    test(contribution: Object): boolean {
+        return contribution.constructor.name === 'SampleFilteredCommandContribution';
+    }
+}
+
+@injectable()
+export class SampleGenericContributionFilter implements ContributionFilter {
+
+    contributions = ['*'];
+
+    test(contribution: Object): boolean {
+        return contribution.constructor.name.toLowerCase() === 'samplefilteredcommandcontribution2';
     }
 }
 
 export const bindSampleFilteredCommandContribution = (bind: interfaces.Bind) => {
     bind(CommandContribution).to(SampleFilteredCommandContribution);
+    bind(CommandContribution).to(SampleFilteredCommandContribution2);
     bind(ContributionFilter).to(SampleFilteredCommandContributionFilter);
+    bind(ContributionFilter).to(SampleGenericContributionFilter);
 };

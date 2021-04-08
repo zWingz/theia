@@ -16,11 +16,9 @@
 
 import { interfaces } from 'inversify';
 import { Filter } from './filter';
-import { NameBasedFilter } from './string-based-filter';
 export type ContributionType = interfaces.ServiceIdentifier<unknown>;
 
 export const ContributionFilter = Symbol('ContributionFilter');
-
 /**
  * Specialized `Filter` that is used by the `ContainerBasedContributionProvider` to
  * filter unwanted contributions that are already bound in the DI container.
@@ -31,10 +29,4 @@ export interface ContributionFilter extends Filter<Object> {
      * will be applied to all contribution types.
      */
     contributions?: ContributionType[];
-}
-
-/**
- * Specialized `ContributionFilter` that can be used to filter contributions based on their constructor name.
- */
-export abstract class NameBasedContributionFilter extends NameBasedFilter<Object> implements ContributionFilter {
 }

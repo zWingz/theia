@@ -18,42 +18,31 @@ import { injectable, multiInject, optional } from 'inversify';
 import { ContributionFilter, ContributionType } from './contribution-filter';
 import { applyFilters } from './filter';
 
-const GENERIC_CONTRIBUTION_FILTER_KEY = '*';
 @injectable()
 export class ContributionFilterRegistry {
-    registry: Map<ContributionType, ContributionFilter[]>;
-    constructor(@multiInject(ContributionFilter) @optional() contributionFilters: ContributionFilter[] = []) {
-        this.registry = new Map();
-        contributionFilters.forEach(filter => {
-            if (!filter.contributions || filter.contributions.length === 0) {
-                this.addFilter(GENERIC_CONTRIBUTION_FILTER_KEY, filter);
+
+    protected registry = new Map<ContributionType, ContributionFilter[]>();
+    protected genericFilters: ContributionFilter[] = [];
+
+    constructor(
+        @multiInject(ContributionFilter) @optional() contributionFilters: ContributionFilter[] = []
+    ) {
+        for (const filter of contributionFilters) {
+            if (filter.contributions === undefined || filter.contributions.length === 0 || filter.contributions.includes('*')) {
+                this.genericFilters.push(filter);
             } else {
-                filter.contributions.forEach(type => {
+                for (const type of filter.contributions) {
                     this.addFilter(type, filter);
-                });
+                }
             }
-        });
-    }
-
-    private addFilter(type: ContributionType, filter: ContributionFilter): void {
-        this.getOrCreate(type).push(filter);
-    }
-
-    private getOrCreate(type: ContributionType): ContributionFilter[] {
-        let value = this.registry.get(type);
-        if (!value) {
-            value = [];
-            this.registry.set(type, value);
         }
-        return value;
     }
 
     get(type: ContributionType): ContributionFilter[] {
-        const filters = [...(this.registry.get(type) || [])];
-        if (type !== GENERIC_CONTRIBUTION_FILTER_KEY) {
-            filters.push(...(this.registry.get(GENERIC_CONTRIBUTION_FILTER_KEY) || []));
-        }
-        return filters;
+        return [
+            ...this.registry.get(type) || [],
+            ...this.genericFilters
+        ];
     }
 
     /**
@@ -63,7 +52,18 @@ export class ContributionFilterRegistry {
      * @returns the filtered elements
      */
     applyFilters<T extends Object>(toFilter: T[], type: ContributionType): T[] {
-        const filters = this.get(type);
-        return applyFilters<T>(toFilter, filters);
+        return applyFilters<T>(toFilter, this.get(type));
+    }
+
+    protected addFilter(type: ContributionType, filter: ContributionFilter): void {
+        this.getOrCreate(type).push(filter);
+    }
+
+    protected getOrCreate(type: ContributionType): ContributionFilter[] {
+        let value = this.registry.get(type);
+        if (value === undefined) {
+            this.registry.set(type, value = []);
+        }
+        return value;
     }
 }

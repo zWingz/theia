@@ -15,6 +15,7 @@
  ********************************************************************************/
 
 export const Filter = Symbol('Filter');
+
 /**
  * A `Filter` can be used to test whether a given object should be filtered
  * from a set of objects. The `test` function can be applied to an object
@@ -26,7 +27,7 @@ export interface Filter<T extends Object> {
      * @param toTest Object that should be tested
      * @returns `true` if the object should be filtered out, `false` otherwise
      */
-    test(toTest: T): Boolean;
+    test(toTest: T): boolean;
 }
 
 /**
@@ -40,9 +41,11 @@ export function applyFilters<T extends Object>(toFilter: T[], filters: Filter<T>
     if (filters.length === 0) {
         return toFilter;
     }
-    return toFilter.filter(object => {
-        const result = filters.every(filter => !filter.test(object));
-        return negate ? !result : result;
-    });
+    return toFilter.filter(
+        object => filters.every(
+            // By default we want to *keep* objects when false === filter.test(object)
+            // because filter.test(object) returns true to exclude items.
+            filter => negate === filter.test(object)
+        )
+    );
 }
-
