@@ -1,5 +1,11 @@
 # Change Log
 
+## v1.13.0
+
+- [core] add API to filter contributions at runtime [#9317](https://github.com/eclipse-theia/theia/pull/9317) Contributed on behalf of STMicroelectronics
+
+<a name="breaking_changes_1.13.0">[Breaking Changes:](#breaking_changes_1.13.0)</a>
+
 ## v1.12.0 - 3/25/2020
 
 [1.12.0 Milestone](https://github.com/eclipse-theia/theia/milestone/17)

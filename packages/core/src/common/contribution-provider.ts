@@ -15,6 +15,7 @@
  ********************************************************************************/
 
 import { interfaces } from 'inversify';
+import { ContributionFilterRegistry } from './contribution-filter';
 
 export const ContributionProvider = Symbol('ContributionProvider');
 
@@ -38,6 +39,7 @@ class ContainerBasedContributionProvider<T extends object> implements Contributi
     getContributions(recursive?: boolean): T[] {
         if (this.services === undefined) {
             const currentServices: T[] = [];
+            let filterRegistry: ContributionFilterRegistry | undefined;
             let currentContainer: interfaces.Container | null = this.container;
             // eslint-disable-next-line no-null/no-null
             while (currentContainer !== null) {
@@ -48,10 +50,17 @@ class ContainerBasedContributionProvider<T extends object> implements Contributi
                         console.error(error);
                     }
                 }
+                if (filterRegistry === undefined && currentContainer.isBound(ContributionFilterRegistry)) {
+                    filterRegistry = currentContainer.get(ContributionFilterRegistry);
+                }
                 // eslint-disable-next-line no-null/no-null
                 currentContainer = recursive === true ? currentContainer.parent : null;
             }
-            this.services = currentServices;
+            if (filterRegistry === undefined) {
+                this.services = currentServices;
+            } else {
+                this.services = filterRegistry.applyFilters(currentServices, this.serviceIdentifier);
+            }
         }
         return this.services;
     }

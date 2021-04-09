@@ -30,6 +30,7 @@ import { EnvVariablesServerImpl } from './env-variables';
 import { ConnectionContainerModule } from './messaging/connection-container-module';
 import { QuickPickService, quickPickServicePath } from '../common/quick-pick-service';
 import { WsRequestValidator, WsRequestValidatorContribution } from './ws-request-validators';
+import { ContributionFilterRegistry } from '../common/contribution-filter';
 
 decorate(injectable(), ApplicationPackage);
 
@@ -85,4 +86,6 @@ export const backendApplicationModule = new ContainerModule(bind => {
 
     bind(WsRequestValidator).toSelf().inSingletonScope();
     bindContributionProvider(bind, WsRequestValidatorContribution);
+
+    bind(ContributionFilterRegistry).toSelf().inSingletonScope();
 });
