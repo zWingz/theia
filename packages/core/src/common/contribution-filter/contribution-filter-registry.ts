@@ -15,34 +15,40 @@
  ********************************************************************************/
 
 import { injectable, multiInject, optional } from 'inversify';
-import { ContributionFilter, ContributionType } from './contribution-filter';
-import { applyFilters } from './filter';
+import { ContributionFilterRegistry, ContributionType, FilterContribution } from './contribution-filter';
+import { applyFilters, Filter } from './filter';
 
+/**
+ * Registry of contribution filters.
+ *
+ * Implement/bind to the `FilterContribution` interface/symbol to register your contribution filters.
+ */
 @injectable()
-export class ContributionFilterRegistry {
+export class ContributionFilterRegistryImpl implements ContributionFilterRegistry {
 
-    protected registry = new Map<ContributionType, ContributionFilter[]>();
-    protected genericFilters: ContributionFilter[] = [];
+    protected initialized = false;
+    protected genericFilters: Filter<Object>[] = [];
+    protected typeToFilters = new Map<ContributionType, Filter<Object>[]>();
 
     constructor(
-        @multiInject(ContributionFilter) @optional() contributionFilters: ContributionFilter[] = []
+        @multiInject(FilterContribution) @optional() contributions: FilterContribution[] = []
     ) {
-        for (const filter of contributionFilters) {
-            if (filter.contributions === undefined || filter.contributions.length === 0 || filter.contributions.includes('*')) {
-                this.genericFilters.push(filter);
-            } else {
-                for (const type of filter.contributions) {
-                    this.addFilter(type, filter);
-                }
-            }
+        for (const contribution of contributions) {
+            contribution.registerContributionFilters(this);
         }
+        this.initialized = true;
     }
 
-    get(type: ContributionType): ContributionFilter[] {
-        return [
-            ...this.registry.get(type) || [],
-            ...this.genericFilters
-        ];
+    addFilters(types: '*' | ContributionType[], filters: Filter<Object>[]): void {
+        if (this.initialized) {
+            throw new Error('cannot add filters after initialization is done.');
+        } else if (types === '*') {
+            this.genericFilters.push(...filters);
+        } else {
+            for (const type of types) {
+                this.getOrCreate(type).push(...filters);
+            }
+        }
     }
 
     /**
@@ -52,18 +58,21 @@ export class ContributionFilterRegistry {
      * @returns the filtered elements
      */
     applyFilters<T extends Object>(toFilter: T[], type: ContributionType): T[] {
-        return applyFilters<T>(toFilter, this.get(type));
+        return applyFilters<T>(toFilter, this.getFilters(type));
     }
 
-    protected addFilter(type: ContributionType, filter: ContributionFilter): void {
-        this.getOrCreate(type).push(filter);
-    }
-
-    protected getOrCreate(type: ContributionType): ContributionFilter[] {
-        let value = this.registry.get(type);
+    protected getOrCreate(type: ContributionType): Filter<Object>[] {
+        let value = this.typeToFilters.get(type);
         if (value === undefined) {
-            this.registry.set(type, value = []);
+            this.typeToFilters.set(type, value = []);
         }
         return value;
+    }
+
+    protected getFilters(type: ContributionType): Filter<Object>[] {
+        return [
+            ...this.typeToFilters.get(type) || [],
+            ...this.genericFilters
+        ];
     }
 }

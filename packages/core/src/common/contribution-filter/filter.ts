@@ -17,24 +17,16 @@
 export const Filter = Symbol('Filter');
 
 /**
- * A `Filter` can be used to test whether a given object should be filtered
- * from a set of objects. The `test` function can be applied to an object
- * of matching type and returns `true` if the object should be filtered out.
+ * @param toTest Object that should be tested
+ * @returns `true` if the object should be filtered out, `false` otherwise
  */
-export interface Filter<T extends Object> {
-    /**
-     * Evaluates this filter on the given argument.
-     * @param toTest Object that should be tested
-     * @returns `true` if the object should be filtered out, `false` otherwise
-     */
-    test(toTest: T): boolean;
-}
+export type Filter<T extends Object> = (toTest: T) => boolean;
 
 /**
  * Applies a set of filters to a set of given objects and returns the set of filtered objects.
  * @param toFilter Set of objects which should be filtered
  * @param filters Set of filters that should be applied
- * @param negate Negation flag. If set to true the result of all `Filter.test` methods is negated
+ * @param negate Negation flag. If set to true the result of all filters is negated
  * @returns The set of filtered arguments
  */
 export function applyFilters<T extends Object>(toFilter: T[], filters: Filter<T>[], negate: boolean = false): T[] {
@@ -45,7 +37,7 @@ export function applyFilters<T extends Object>(toFilter: T[], filters: Filter<T>
         object => filters.every(
             // By default we want to *keep* objects when false === filter.test(object)
             // because filter.test(object) returns true to exclude items.
-            filter => negate === filter.test(object)
+            filter => negate === filter(object)
         )
     );
 }

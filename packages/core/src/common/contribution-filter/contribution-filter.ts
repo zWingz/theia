@@ -16,17 +16,31 @@
 
 import { interfaces } from 'inversify';
 import { Filter } from './filter';
-export type ContributionType = interfaces.ServiceIdentifier<unknown>;
 
-export const ContributionFilter = Symbol('ContributionFilter');
-/**
- * Specialized `Filter` that is used by the `ContainerBasedContributionProvider` to
- * filter unwanted contributions that are already bound in the DI container.
- */
-export interface ContributionFilter extends Filter<Object> {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type ContributionType = interfaces.ServiceIdentifier<any>;
+
+export interface ContributionFilterRegistry {
+
     /**
-     * Contribution types for which this filter is applicable. If `undefined` or empty this filter
-     * will be applied to all contribution types.
+     * Add filters to be applied for every type of contribution.
      */
-    contributions?: ContributionType[];
+    addFilters(types: '*', filters: Filter<Object>[]): void;
+
+    /**
+     * Given a list of contribution types, register filters to apply.
+     * @param types types for which to register the filters.
+     */
+    addFilters(types: ContributionType[], filters: Filter<Object>[]): void;
+}
+
+export const FilterContribution = Symbol('FilterContribution');
+/**
+ * Register filters to remove contributions.
+ */
+export interface FilterContribution {
+    /**
+     * Use the registry to register your contribution filters.
+     */
+    registerContributionFilters(registry: ContributionFilterRegistry): void;
 }
