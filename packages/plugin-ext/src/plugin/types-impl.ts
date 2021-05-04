@@ -31,7 +31,9 @@ import { startsWithIgnoreCase } from '@theia/core/lib/common/strings';
 import { MarkdownString, isMarkdownString } from './markdown-string';
 import { SymbolKind } from '../common/plugin-api-rpc-model';
 import { FileSystemProviderErrorCode, markAsFileSystemProviderError } from '@theia/filesystem/lib/common/files';
+import { es5ClassCompat } from '../common/types';
 
+@es5ClassCompat
 export class Disposable {
     private disposable: undefined | (() => void);
 
@@ -125,6 +127,7 @@ export enum SourceControlInputBoxValidationType {
     Information = 2
 }
 
+@es5ClassCompat
 export class ColorTheme implements theia.ColorTheme {
     constructor(public readonly kind: ColorThemeKind) { }
 }
@@ -151,6 +154,7 @@ export namespace TextEditorSelectionChangeKind {
     }
 }
 
+@es5ClassCompat
 export class Position {
     private _line: number;
     private _character: number;
@@ -308,6 +312,7 @@ export class Position {
     }
 }
 
+@es5ClassCompat
 export class Range {
     protected _start: Position;
     protected _end: Position;
@@ -439,6 +444,7 @@ export class Range {
 
 }
 
+@es5ClassCompat
 export class Selection extends Range {
     private _anchor: Position;
     private _active: Position;
@@ -490,6 +496,7 @@ export enum EnvironmentVariableMutatorType {
     Prepend = 3
 }
 
+@es5ClassCompat
 export class SnippetString {
 
     static isSnippetString(thing: {}): thing is SnippetString {
@@ -571,11 +578,13 @@ export class SnippetString {
     }
 }
 
+@es5ClassCompat
 export class ThemeColor {
     constructor(public id: string) {
     }
 }
 
+@es5ClassCompat
 export class ThemeIcon {
 
     static readonly File: ThemeIcon = new ThemeIcon('file');
@@ -634,6 +643,7 @@ export enum ConfigurationTarget {
     Memory
 }
 
+@es5ClassCompat
 export class RelativePattern {
 
     base: string;
@@ -664,6 +674,7 @@ export enum IndentAction {
     Outdent = 3
 }
 
+@es5ClassCompat
 export class TextEdit {
 
     protected _range: Range;
@@ -772,6 +783,7 @@ export enum CompletionItemKind {
     TypeParameter = 24
 }
 
+@es5ClassCompat
 export class CompletionItem implements theia.CompletionItem {
 
     label: string;
@@ -794,6 +806,7 @@ export class CompletionItem implements theia.CompletionItem {
     }
 }
 
+@es5ClassCompat
 export class CompletionList {
 
     isIncomplete?: boolean;
@@ -861,6 +874,7 @@ export enum CompletionItemTag {
     Deprecated = 1,
 }
 
+@es5ClassCompat
 export class Diagnostic {
     range: Range;
     message: string;
@@ -888,6 +902,7 @@ export enum MarkerTag {
     Unnecessary = 1,
 }
 
+@es5ClassCompat
 export class ParameterInformation {
     label: string | [number, number];
     documentation?: string | MarkdownString;
@@ -898,6 +913,7 @@ export class ParameterInformation {
     }
 }
 
+@es5ClassCompat
 export class SignatureInformation {
     label: string;
     documentation?: string | MarkdownString;
@@ -916,6 +932,7 @@ export enum SignatureHelpTriggerKind {
     ContentChange = 3,
 }
 
+@es5ClassCompat
 export class SignatureHelp {
     signatures: SignatureInformation[];
     activeSignature: number;
@@ -926,6 +943,7 @@ export class SignatureHelp {
     }
 }
 
+@es5ClassCompat
 export class Hover {
 
     public contents: MarkdownString[] | theia.MarkedString[];
@@ -955,6 +973,7 @@ export enum DocumentHighlightKind {
     Write = 2
 }
 
+@es5ClassCompat
 export class DocumentHighlight {
 
     public range: Range;
@@ -971,6 +990,7 @@ export class DocumentHighlight {
 
 export type Definition = Location | Location[];
 
+@es5ClassCompat
 export class DocumentLink {
 
     range: Range;
@@ -1030,6 +1050,7 @@ export enum CodeActionTriggerKind {
     Automatic = 2,
 }
 
+@es5ClassCompat
 export class CodeActionKind {
     private static readonly sep = '.';
 
@@ -1066,6 +1087,7 @@ export enum TextDocumentSaveReason {
     FocusOut = 3
 }
 
+@es5ClassCompat
 export class CodeAction {
     title: string;
 
@@ -1118,6 +1140,7 @@ export interface FileTextEdit {
     metadata?: WorkspaceEditMetadata;
 }
 
+@es5ClassCompat
 export class WorkspaceEdit implements theia.WorkspaceEdit {
 
     private _edits = new Array<FileOperation | FileTextEdit | undefined>();
@@ -1267,6 +1290,7 @@ export enum SymbolTag {
     Deprecated = 1
 }
 
+@es5ClassCompat
 export class SymbolInformation {
 
     static validate(candidate: SymbolInformation): void {
@@ -1311,6 +1335,7 @@ export class SymbolInformation {
     }
 }
 
+@es5ClassCompat
 export class DocumentSymbol {
 
     static validate(candidate: DocumentSymbol): void {
@@ -1355,6 +1380,7 @@ export interface QuickInputButton {
     readonly tooltip?: string | undefined;
 }
 
+@es5ClassCompat
 export class QuickInputButtons {
     static readonly Back: QuickInputButton = {
         iconPath: {
@@ -1377,6 +1403,7 @@ export enum FileChangeType {
     Deleted = 3,
 }
 
+@es5ClassCompat
 export class FileSystemError extends Error {
 
     static FileExists(messageOrUri?: string | URI): FileSystemError {
@@ -1459,6 +1486,7 @@ export class ProgressOptions {
         this.location = location;
     }
 }
+
 export class Progress<T> {
     /**
      * Report a progress update.
@@ -1656,6 +1684,7 @@ export class CustomExecution {
     }
 }
 
+@es5ClassCompat
 export class TaskGroup {
     private groupId: string;
 
@@ -1699,6 +1728,7 @@ export enum TaskScope {
     Workspace = 2
 }
 
+@es5ClassCompat
 export class Task {
     private taskDefinition: theia.TaskDefinition;
     private taskScope: theia.TaskScope.Global | theia.TaskScope.Workspace | theia.WorkspaceFolder | undefined;
@@ -1924,6 +1954,7 @@ export class DebugAdapterExecutable {
 /**
  * Represents a debug adapter running as a socket based server.
  */
+@es5ClassCompat
 export class DebugAdapterServer {
 
     /**
@@ -1958,6 +1989,7 @@ export enum LogLevel {
 /**
  * The base class of all breakpoint types.
  */
+@es5ClassCompat
 export class Breakpoint {
     /**
      * Is breakpoint enabled.
@@ -1999,6 +2031,7 @@ export class Breakpoint {
 /**
  * A breakpoint specified by a source location.
  */
+@es5ClassCompat
 export class SourceBreakpoint extends Breakpoint {
     /**
      * The source and line position of this breakpoint.
@@ -2017,6 +2050,7 @@ export class SourceBreakpoint extends Breakpoint {
 /**
  * A breakpoint specified by a function name.
  */
+@es5ClassCompat
 export class FunctionBreakpoint extends Breakpoint {
     /**
      * The name of the function to which this breakpoint is attached.
@@ -2032,6 +2066,7 @@ export class FunctionBreakpoint extends Breakpoint {
     }
 }
 
+@es5ClassCompat
 export class Color {
     readonly red: number;
     readonly green: number;
@@ -2046,6 +2081,7 @@ export class Color {
     }
 }
 
+@es5ClassCompat
 export class ColorInformation {
     range: Range;
     color: Color;
@@ -2062,6 +2098,7 @@ export class ColorInformation {
     }
 }
 
+@es5ClassCompat
 export class ColorPresentation {
     label: string;
     textEdit?: TextEdit;
@@ -2081,6 +2118,7 @@ export enum ColorFormat {
     HSL = 2
 }
 
+@es5ClassCompat
 export class FoldingRange {
     start: number;
     end: number;
@@ -2099,6 +2137,7 @@ export enum FoldingRangeKind {
     Region = 3
 }
 
+@es5ClassCompat
 export class SelectionRange {
 
     range: Range;
@@ -2204,6 +2243,7 @@ export class CallHierarchyOutgoingCall {
     }
 }
 
+@es5ClassCompat
 export class TimelineItem {
     timestamp: number;
     label: string;
@@ -2234,7 +2274,6 @@ export class SemanticTokensLegend {
 function isStrArrayOrUndefined(arg: any): arg is string[] | undefined {
     return ((typeof arg === 'undefined') || (Array.isArray(arg) && arg.every(e => typeof e === 'string')));
 }
-
 export class SemanticTokensBuilder {
 
     private _prevLine: number;

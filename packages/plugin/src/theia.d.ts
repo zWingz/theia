@@ -21,6 +21,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 import './theia-proposed';
+import { es5ClassCompat } from '../common/types';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable max-len */
@@ -32,6 +33,7 @@ declare module '@theia/plugin' {
      */
     export const version: string;
 
+    @es5ClassCompat
     export class Disposable {
 
         constructor(func: () => void);
@@ -225,6 +227,7 @@ declare module '@theia/plugin' {
     /**
      * Represents a line and character position.
      */
+    @es5ClassCompat
     export class Position {
 
         /**
@@ -335,6 +338,7 @@ declare module '@theia/plugin' {
     /**
      * Pair of two positions.
      */
+    @es5ClassCompat
     export class Range {
         /**
          * Start position.
@@ -420,6 +424,7 @@ declare module '@theia/plugin' {
     /**
      * Represents a text selection in an editor.
      */
+    @es5ClassCompat
     export class Selection extends Range {
 
         /**
@@ -460,6 +465,7 @@ declare module '@theia/plugin' {
      * A snippet string is a template which allows to insert text
      * and to control the editor cursor when insertion happens.
      */
+    @es5ClassCompat
     export class SnippetString {
 
         /**
@@ -714,6 +720,7 @@ declare module '@theia/plugin' {
      * The MarkdownString represents human readable text that supports formatting via the
      * markdown syntax. Standard markdown is supported, also tables, but no embedded html.
      */
+    @es5ClassCompat
     export class MarkdownString {
 
         /**
@@ -2557,6 +2564,7 @@ declare module '@theia/plugin' {
      * A reference to one of the workbench colors.
      * Using a theme color is preferred over a custom color as it gives theme authors and users the possibility to change the color.
      */
+    @es5ClassCompat
     export class ThemeColor {
         /**
          * Creates a reference to a theme color.
@@ -2568,6 +2576,7 @@ declare module '@theia/plugin' {
      * A reference to a named icon. Currently only [File](#ThemeIcon.File) and [Folder](#ThemeIcon.Folder) are supported.
      * Using a theme icon is preferred over a custom icon as it gives theme authors the possibility to change the icons.
      */
+    @es5ClassCompat
     export class ThemeIcon {
         /**
          * Reference to a icon representing a file. The icon is taken from the current file icon theme or a placeholder icon.
@@ -4456,6 +4465,7 @@ declare module '@theia/plugin' {
     /**
      * Represents a color theme.
      */
+    @es5ClassCompat
     export interface ColorTheme {
         /**
          * The kind of this color theme: light, dark or high contrast.
@@ -4466,6 +4476,7 @@ declare module '@theia/plugin' {
     /**
      * Predefined buttons for [QuickPick](#QuickPick) and [InputBox](#InputBox).
      */
+    @es5ClassCompat
     export class QuickInputButtons {
 
         /**
@@ -5194,6 +5205,7 @@ declare module '@theia/plugin' {
      * This class has factory methods for common error-cases, like `FileNotFound` when
      * a file or folder doesn't exist, use them like so: `throw vscode.FileSystemError.FileNotFound(someUri);`
      */
+    @es5ClassCompat
     export class FileSystemError extends Error {
 
         /**
@@ -6035,6 +6047,7 @@ declare module '@theia/plugin' {
      * relatively to a base path. The base path can either be an absolute file path
      * or a [workspace folder](#WorkspaceFolder).
      */
+    @es5ClassCompat
     export class RelativePattern {
 
         /**
@@ -6257,6 +6270,7 @@ declare module '@theia/plugin' {
      * Represents a parameter of a callable-signature. A parameter can
      * have a label and a doc-comment.
      */
+    @es5ClassCompat
     export class ParameterInformation {
 
         /**
@@ -6286,6 +6300,7 @@ declare module '@theia/plugin' {
      * can have a label, like a function-name, a doc-comment, and
      * a set of parameters.
      */
+    @es5ClassCompat
     export class SignatureInformation {
 
         /**
@@ -6319,6 +6334,7 @@ declare module '@theia/plugin' {
      * callable. There can be multiple signatures but only one
      * active and only one active parameter.
      */
+    @es5ClassCompat
     export class SignatureHelp {
 
         /**
@@ -6517,6 +6533,7 @@ declare module '@theia/plugin' {
      * Represents information about programming constructs like variables, classes,
      * interfaces etc.
      */
+    @es5ClassCompat
     export class SymbolInformation {
 
         /**
@@ -6570,6 +6587,7 @@ declare module '@theia/plugin' {
      * symbols can be hierarchical and they have two ranges: one that encloses its definition and one that points to
      * its most interesting range, e.g. the range of an identifier.
      */
+    @es5ClassCompat
     export class DocumentSymbol {
 
         /**
@@ -6637,6 +6655,7 @@ declare module '@theia/plugin' {
     /**
      * Represents a color in RGBA space.
      */
+    @es5ClassCompat
     export class Color {
 
         /**
@@ -6673,6 +6692,7 @@ declare module '@theia/plugin' {
     /**
      * Represents a color range from a document.
      */
+    @es5ClassCompat
     export class ColorInformation {
 
         /**
@@ -6702,6 +6722,7 @@ declare module '@theia/plugin' {
      * the constant `Red`, the hex-value `#ff0000`, or in rgba and hsla forms. In csharp other representations
      * apply, e.g `System.Drawing.Color.Red`.
      */
+    @es5ClassCompat
     export class ColorPresentation {
 
         /**
@@ -6764,6 +6785,7 @@ declare module '@theia/plugin' {
      * A line based folding range. To be valid, start and end line must a zero or larger and smaller than the number of lines in the document.
      * Invalid ranges will be ignored.
      */
+    @es5ClassCompat
     export class FoldingRange {
 
         /**
@@ -6874,6 +6896,7 @@ declare module '@theia/plugin' {
      * A text edit represents edits that should be applied
      * to a document.
      */
+    @es5ClassCompat
     export class TextEdit {
 
         /**
@@ -6995,6 +7018,7 @@ declare module '@theia/plugin' {
      * @see [CompletionItemProvider.provideCompletionItems](#CompletionItemProvider.provideCompletionItems)
      * @see [CompletionItemProvider.resolveCompletionItem](#CompletionItemProvider.resolveCompletionItem)
      */
+    @es5ClassCompat
     export class CompletionItem {
 
         /**
@@ -7128,6 +7152,7 @@ declare module '@theia/plugin' {
      * Represents a collection of [completion items](#CompletionItem) to be presented
      * in the editor.
      */
+    @es5ClassCompat
     export class CompletionList<T extends CompletionItem = CompletionItem> {
 
         /**
@@ -7198,6 +7223,7 @@ declare module '@theia/plugin' {
      * Represents a location inside a resource, such as a line
      * inside a text file.
      */
+    @es5ClassCompat
     export class Location {
 
         /**
@@ -7304,6 +7330,7 @@ declare module '@theia/plugin' {
      * Represents a diagnostic, such as a compiler error or warning. Diagnostic objects
      * are only valid in the scope of a file.
      */
+    @es5ClassCompat
     export class Diagnostic {
 
         /**
@@ -7439,6 +7466,7 @@ declare module '@theia/plugin' {
      * A CodeAction must set either [`edit`](#edit) and/or a [`command`](#command).
      * If both are supplied, the `edit` is applied first, then the command is executed.
      */
+    @es5ClassCompat
     export class CodeAction {
 
         /**
@@ -7594,6 +7622,7 @@ declare module '@theia/plugin' {
      * Code action kinds are used by VS Code for UI elements such as the refactoring context menu. Users
      * can also trigger code actions with a specific kind with the `editor.action.codeAction` command.
      */
+    @es5ClassCompat
     export class CodeActionKind {
         /**
          * Empty kind.
@@ -7751,6 +7780,7 @@ declare module '@theia/plugin' {
      *
      * Use the [applyEdit](#workspace.applyEdit)-function to apply a workspace edit.
      */
+    @es5ClassCompat
     export class WorkspaceEdit {
 
         /**
@@ -7952,6 +7982,7 @@ declare module '@theia/plugin' {
      * A document link is a range in a text document that links to an internal or external resource, like another
      * text document or a web site.
      */
+    @es5ClassCompat
     export class DocumentLink {
 
         /**
@@ -8713,6 +8744,7 @@ declare module '@theia/plugin' {
      * A hover represents additional information for a symbol or word. Hovers are
      * rendered in a tooltip-like widget.
      */
+    @es5ClassCompat
     export class Hover {
 
         /**
@@ -8782,6 +8814,7 @@ declare module '@theia/plugin' {
      * special attention. Usually a document highlight is visualized by changing
      * the background color of its range.
      */
+    @es5ClassCompat
     export class DocumentHighlight {
 
         /**
@@ -9288,6 +9321,7 @@ declare module '@theia/plugin' {
     /**
      * Represents a debug adapter running as a socket based server.
      */
+    @es5ClassCompat
     export class DebugAdapterServer {
 
         /**
@@ -9372,6 +9406,7 @@ declare module '@theia/plugin' {
     /**
      * The base class of all breakpoint types.
      */
+    @es5ClassCompat
     export class Breakpoint {
         /**
          * The unique ID of the breakpoint.
@@ -9400,6 +9435,7 @@ declare module '@theia/plugin' {
     /**
      * A breakpoint specified by a source location.
      */
+    @es5ClassCompat
     export class SourceBreakpoint extends Breakpoint {
         /**
          * The source and line position of this breakpoint.
@@ -9415,6 +9451,7 @@ declare module '@theia/plugin' {
     /**
      * A breakpoint specified by a function name.
      */
+    @es5ClassCompat
     export class FunctionBreakpoint extends Breakpoint {
         /**
          * The name of the function to which this breakpoint is attached.
@@ -9789,6 +9826,7 @@ declare module '@theia/plugin' {
         Workspace = 2
     }
 
+    @es5ClassCompat
     export class TaskGroup {
 
         /** The clean task group */
@@ -9864,6 +9902,7 @@ declare module '@theia/plugin' {
         showReuseMessage?: boolean;
     }
 
+    @es5ClassCompat
     export class Task {
 
         /**
@@ -10475,6 +10514,7 @@ declare module '@theia/plugin' {
      * A selection range represents a part of a selection hierarchy. A selection range
      * may have a parent selection range that contains it.
      */
+    @es5ClassCompat
     export class SelectionRange {
 
         /**

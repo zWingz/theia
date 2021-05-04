@@ -17,7 +17,7 @@
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { Path } from '@theia/core/lib/common/path';
-import { ApplicationShell, NavigatableWidget, WidgetManager } from '@theia/core/lib/browser';
+import { ApplicationShell, NavigatableWidget, Widget, WidgetManager } from '@theia/core/lib/browser';
 import { VariableContribution, VariableRegistry, Variable } from '@theia/variable-resolver/lib/browser';
 import { WorkspaceService } from './workspace-service';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
@@ -55,11 +55,12 @@ export class WorkspaceVariableContribution implements VariableContribution {
                 });
             }
         });
-        for (const widget of this.shell.widgets) {
+        Array.prototype.forEach.call(this.shell.widgets, (widget: Widget) => {
             if (NavigatableWidget.is(widget) && widget.isVisible) {
                 this.addRecentlyVisible(widget);
             }
-        }
+        });
+
         this.updateCurrentWidget();
     }
 
