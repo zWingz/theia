@@ -14,13 +14,14 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import * as fs from '@theia/core/shared/fs-extra';
+import * as path from 'path';
 import { ILogger } from '@theia/core';
 import { RawProcess, RawProcessFactory, RawProcessOptions } from '@theia/process/lib/node';
 import { FileUri } from '@theia/core/lib/node/file-uri';
 import URI from '@theia/core/lib/common/uri';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { SearchInWorkspaceServer, SearchInWorkspaceOptions, SearchInWorkspaceResult, SearchInWorkspaceClient, LinePreview } from '../common/search-in-workspace-interface';
-import { RipgrepSearchUtils } from './ripgrep-search-utils';
 
 export const RgPath = Symbol('RgPath');
 
@@ -97,73 +98,100 @@ export class RipgrepSearchInWorkspaceServer implements SearchInWorkspaceServer {
     protected getArgs(options?: SearchInWorkspaceOptions): string[] {
         const args = new Set<string>();
 
-        const appendGlobArgs = (rawPatterns: string[], exclude: boolean) => {
-            rawPatterns.forEach(rawPattern => {
-                if (rawPattern !== '') {
-                    const globArguments = this.patternToGlobCLIArguments(rawPattern, exclude);
-                    globArguments.forEach(arg => args.add(arg));
-                }
-            });
-        };
-
         args.add('--hidden');
         args.add('--json');
 
-        if (options && options.matchCase) {
+        if (options?.matchCase) {
             args.add('--case-sensitive');
         } else {
             args.add('--ignore-case');
         }
 
-        if (options && options.includeIgnored) {
+        if (options?.includeIgnored) {
             args.add('--no-ignore');
         }
-        if (options && options.maxFileSize) {
+        if (options?.maxFileSize) {
             args.add('--max-filesize=' + options.maxFileSize.trim());
         } else {
             args.add('--max-filesize=20M');
         }
 
-        if (options && options.include) {
-            appendGlobArgs(options.include, false);
+        if (options?.include) {
+            this.addGlobArgs(args, options.include, false);
         }
 
-        if (options && options.exclude) {
-            appendGlobArgs(options.exclude, true);
+        if (options?.exclude) {
+            this.addGlobArgs(args, options.exclude, true);
         }
 
-        if (options && options.useRegExp || options && options.matchWholeWord) {
+        if (options?.useRegExp || options?.matchWholeWord) {
             args.add('--regexp');
         } else {
             args.add('--fixed-strings');
             args.add('--');
         }
 
+        console.log(args);
         return Array.from(args);
     }
 
     /**
-     * Transforms a given file pattern to 'ripgrep' glob CLI arguments.
+     * Add glob patterns to ripgrep's arguments
+     * @param args ripgrep set of arguments
+     * @param patterns patterns to include as globs
+     * @param exclude whether to negate the glob pattern or not
      */
-    protected patternToGlobCLIArguments(pattern: string, exclude: boolean): string[] {
-        const globCommandArgument = '--glob=';
-        const excludeChar = exclude ? '!' : '';
-        const subDirGlobPattern = '**/';
-
-        const subDirGlobPrefix = pattern.startsWith('/') ? '**' : subDirGlobPattern;
-        const updatedPattern = pattern.startsWith(subDirGlobPattern) ? pattern : `${subDirGlobPrefix}${pattern}`;
-
-        const globArgument = `${globCommandArgument}${excludeChar}${updatedPattern}`;
-
-        const globArgumentsArray = [globArgument];
-        if (!globArgument.endsWith('*')) {
-            // Add a generic glob CLI argument entry to include files inside a given directory.
-            const suffix = globArgument.endsWith('/') ? '*' : '/*';
-            globArgumentsArray.push(`${globArgument}${suffix}`);
+    protected addGlobArgs(args: Set<string>, patterns: string[], exclude: boolean = false): void {
+        const sanitizedPatterns = patterns.map(pattern => pattern.trim()).filter(pattern => pattern.length > 0);
+        for (let pattern of sanitizedPatterns) {
+            // make sure the pattern always starts with `**/`
+            if (pattern.startsWith('/')) {
+                pattern = '**' + pattern;
+            } else if (!pattern.startsWith('**/')) {
+                pattern = '**/' + pattern;
+            }
+            // add the exclusion prefix
+            if (exclude) {
+                pattern = '!' + pattern;
+            }
+            args.add(`--glob=${pattern}`);
+            // add a generic glob cli argument entry to include files inside a given directory
+            if (!pattern.endsWith('*')) {
+                // ensure the new pattern ends with `/*`
+                pattern += pattern.endsWith('/') ? '*' : '/*';
+                args.add(`--glob=${pattern}`);
+            }
         }
+    }
 
-        return globArgumentsArray;
-    };
+    /**
+     * Transforms relative patterns to absolute paths, one for each given search path.
+     * The resulting paths are not validated in the file system as the pattern keeps glob information.
+     *
+     * @returns The resulting list may be larger than the received patterns as a relative pattern may
+     * resolve to multiple absolute patterns upto the number of search paths.
+     */
+    protected replaceRelativeToAbsolute(roots: string[], patterns: string[] = []): string[] {
+        const expandedPatterns = new Set<string>();
+        for (const pattern of patterns) {
+            if (this.isPatternRelative(pattern)) {
+                // create new patterns using the absolute form for each root
+                for (const root of roots) {
+                    expandedPatterns.add(path.resolve(root, pattern));
+                }
+            } else {
+                expandedPatterns.add(pattern);
+            }
+        }
+        return Array.from(expandedPatterns);
+    }
+
+    /**
+     * Tests if the pattern is relative and should/can be made absolute.
+     */
+    protected isPatternRelative(pattern: string): boolean {
+        return pattern.replace(/\\/g, '/').startsWith('./');
+    }
 
     /**
      * By default, sets the search directories for the string WHAT to the provided ROOTURIS directories
@@ -177,18 +205,21 @@ export class RipgrepSearchInWorkspaceServer implements SearchInWorkspaceServer {
      * Relative paths are allowed, the application will attempt to translate them to valid absolute paths
      * based on the applicable search directories.
      */
-    search(what: string, rootUris: string[], opts?: SearchInWorkspaceOptions): Promise<number> {
+    async search(what: string, rootUris: string[], options: SearchInWorkspaceOptions = {}): Promise<number> {
         // Start the rg process.  Use --vimgrep to get one result per
         // line, --color=always to get color control characters that
         // we'll use to parse the lines.
         const searchId = this.nextSearchId++;
         const rootPaths = rootUris.map(root => FileUri.fsPath(root));
-        const searchPaths: string[] = this.resolveSearchPathsFromIncludes(rootPaths, opts);
-        this.includesExcludesToAbsolute(searchPaths, opts);
-        const rgArgs = this.getArgs(opts);
-        // if we use matchWholeWord we use regExp internally,
-        // so, we need to escape regexp characters if we actually not set regexp true in UI.
-        if (opts && opts.matchWholeWord && !opts.useRegExp) {
+        // If there are absolute paths in `include` we will remove them and use
+        // those as paths to search from.
+        const searchPaths = this.extractSearchPathsFromIncludes(rootPaths, options);
+        options.include = this.replaceRelativeToAbsolute(searchPaths, options.include);
+        options.exclude = this.replaceRelativeToAbsolute(searchPaths, options.exclude);
+        const rgArgs = this.getArgs(options);
+        // If we use matchWholeWord we use regExp internally, so we need
+        // to escape regexp characters if we actually not set regexp true in UI.
+        if (options?.matchWholeWord && !options.useRegExp) {
             what = what.replace(/[\-\\\{\}\*\+\?\|\^\$\.\[\]\(\)\#]/g, '\\$&');
             if (!/\B/.test(what.charAt(0))) {
                 what = '\\b' + what;
@@ -238,7 +269,7 @@ export class RipgrepSearchInWorkspaceServer implements SearchInWorkspaceServer {
             // It's not necessary to return early here (the check
             // for maxResults below would avoid sending extra
             // results), but it avoids doing unnecessary work.
-            if (opts && opts.maxResults && numResults >= opts.maxResults) {
+            if (options?.maxResults && numResults >= options.maxResults) {
                 return;
             }
 
@@ -314,7 +345,7 @@ export class RipgrepSearchInWorkspaceServer implements SearchInWorkspaceServer {
                         numResults++;
 
                         // Did we reach the maximum number of results?
-                        if (opts && opts.maxResults && numResults >= opts.maxResults) {
+                        if (options?.maxResults && numResults >= options.maxResults) {
                             rgProcess.kill();
                             if (currentSearchResult && this.client) {
                                 this.client.onResult(searchId, currentSearchResult);
@@ -332,14 +363,14 @@ export class RipgrepSearchInWorkspaceServer implements SearchInWorkspaceServer {
             // If we reached maxResults, we should have already
             // wrapped up the search.  Returning early avoids
             // logging a warning message in wrapUpSearch.
-            if (opts && opts.maxResults && numResults >= opts.maxResults) {
+            if (options?.maxResults && numResults >= options.maxResults) {
                 return;
             }
 
             this.wrapUpSearch(searchId);
         });
 
-        return Promise.resolve(searchId);
+        return searchId;
     }
 
     /**
@@ -354,39 +385,51 @@ export class RipgrepSearchInWorkspaceServer implements SearchInWorkspaceServer {
      * Any pattern that resulted in a valid search path will be removed from the 'include' list as it is
      * provided as an equivalent search path instead.
      */
-    protected resolveSearchPathsFromIncludes(rootPaths: string[], opts: SearchInWorkspaceOptions | undefined): string[] {
-        if (!opts || !opts.include) {
+    protected extractSearchPathsFromIncludes(rootPaths: string[], options: SearchInWorkspaceOptions): string[] {
+        if (!options.include) {
             return rootPaths;
         }
-
-        const { convertedPatterns, resolvedPaths } = RipgrepSearchUtils.resolvePatternsToPaths(opts.include, rootPaths);
-
-        // Remove file patterns that were successfully translated to search paths.
-        opts.include = opts.include.filter(item => !convertedPatterns.has(item));
-
-        return resolvedPaths.size > 0 ? Array.from(resolvedPaths) : rootPaths;
+        const resolvedPaths = new Set<string>();
+        options.include = options.include.filter(pattern => {
+            let keep = true;
+            for (const root of rootPaths) {
+                const absolutePath = this.getAbsolutePathFromPattern(root, pattern);
+                // undefined means the pattern cannot be converted into an absolute path
+                if (absolutePath) {
+                    resolvedPaths.add(absolutePath);
+                    keep = false;
+                }
+            }
+            return keep;
+        });
+        return resolvedPaths.size > 0
+            ? Array.from(resolvedPaths)
+            : rootPaths;
     }
 
     /**
      * Transform include/exclude option patterns from relative patterns to absolute patterns.
      * E.g. './abc/foo.*' to '${root}/abc/foo.*', the transformation does not validate the
      * pattern against the file system as glob suffixes remain.
+     *
+     * @returns undefined if the pattern cannot be converted into an absolute path.
      */
-    protected includesExcludesToAbsolute(searchPaths: string[], opts: SearchInWorkspaceOptions | undefined): void {
-        [true, false].forEach(isInclude => {
-            const patterns = isInclude ? opts?.include : opts?.exclude;
-            if (!patterns) {
-                return;
-            }
-
-            const updatedPatterns = RipgrepSearchUtils.replaceRelativeToAbsolute(patterns, searchPaths);
-
-            if (isInclude) {
-                opts!.include = updatedPatterns;
-            } else {
-                opts!.exclude = updatedPatterns;
-            }
-        });
+    protected getAbsolutePathFromPattern(root: string, pattern: string): string | undefined {
+        pattern = pattern.replace(/\\/g, '/');
+        // The pattern is not referring to a single file or folder, i.e. not to be converted
+        if (!path.isAbsolute(pattern) && !pattern.startsWith('./')) {
+            return undefined;
+        }
+        // remove the `/**` suffix if present
+        if (pattern.endsWith('/**')) {
+            pattern = pattern.substr(0, pattern.length - 3);
+        }
+        // if `pattern` is absolute then `root` will be ignored by `path.resolve()`
+        const targetPath = path.resolve(root, pattern);
+        if (fs.existsSync(targetPath)) {
+            return targetPath;
+        }
+        return undefined;
     }
 
     /**

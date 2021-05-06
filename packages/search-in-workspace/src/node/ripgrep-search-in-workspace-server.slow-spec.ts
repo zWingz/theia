@@ -242,7 +242,7 @@ interface SearchInWorkspaceExpectation {
 
 function compareSearchResults(expected: SearchInWorkspaceExpectation[], actual: SearchInWorkspaceResult[]): void {
     const allMatches = actual.reduceRight((p, v) => p + v.matches.length, 0);
-    expect(allMatches).eq(expected.length);
+    expect(allMatches).eq(expected.length, 'mismatching number of matches accross results');
 
     if (actual.length !== expected.length) {
         return;
@@ -261,9 +261,9 @@ function compareSearchResults(expected: SearchInWorkspaceExpectation[], actual: 
             if (!match) {
                 console.log(a);
             }
-            expect(match.length).eq(e.length);
+            expect(match.length).eq(e.length, `match[${i}].length != expected[${i}].length`);
             if (typeof match.lineText === 'string') {
-                expect(match.lineText).eq(e.lineText);
+                expect(match.lineText).eq(e.lineText, `match[${i}].lineText != expected[${i}].lineText`);
             }
         } else {
             // We don't know this file...
@@ -948,12 +948,12 @@ describe('ripgrep-search-in-workspace-server', function (): void {
     });
 });
 
-describe('#resolvePatternToPathMap', function (): void {
+describe('#extractSearchPathsFromIncludes', function (): void {
     this.timeout(10000);
     it('should not resolve paths from a not absolute / relative pattern', function (): void {
         const pattern = 'carrots';
         const options = { include: [pattern] };
-        const searchPaths = ripgrepServer['resolveSearchPathsFromIncludes']([rootDirA], options);
+        const searchPaths = ripgrepServer['extractSearchPathsFromIncludes']([rootDirA], options);
         // Same root directory
         expect(searchPaths.length).equal(1);
         expect(searchPaths[0]).equal(rootDirA);
@@ -981,7 +981,7 @@ describe('#resolvePatternToPathMap', function (): void {
     });
 });
 
-describe('#patternToGlobCLIArguments', function (): void {
+describe('#addGlobArgs', function (): void {
     this.timeout(10000);
 
     it('should resolve path to glob - filename', function (): void {
@@ -992,9 +992,9 @@ describe('#patternToGlobCLIArguments', function (): void {
                 `--glob=${excludePrefix}**/${filename}`,
                 `--glob=${excludePrefix}**/${filename}/*`
             ];
-
-            const actual = ripgrepServer['patternToGlobCLIArguments'](filename, excludeFlag);
-            expect(expected).to.have.deep.members(actual);
+            const actual = new Set<string>();
+            ripgrepServer['addGlobArgs'](actual, [filename], excludeFlag);
+            expect(expected).to.have.deep.members([...actual]);
         });
     });
 
@@ -1007,9 +1007,9 @@ describe('#patternToGlobCLIArguments', function (): void {
                 `--glob=${excludePrefix}**/${filename}/`,
                 `--glob=${excludePrefix}**/${filename}/*`
             ];
-
-            const actual = ripgrepServer['patternToGlobCLIArguments'](inputPath, excludeFlag);
-            expect(expected).to.have.deep.members(actual);
+            const actual = new Set<string>();
+            ripgrepServer['addGlobArgs'](actual, [inputPath], excludeFlag);
+            expect(expected).to.have.deep.members([...actual]);
         });
     });
 
@@ -1022,9 +1022,9 @@ describe('#patternToGlobCLIArguments', function (): void {
                 `--glob=${excludePrefix}**/${filename}`,
                 `--glob=${excludePrefix}**/${filename}/*`
             ];
-
-            const actual = ripgrepServer['patternToGlobCLIArguments'](inputPath, excludeFlag);
-            expect(expected).to.have.deep.members(actual);
+            const actual = new Set<string>();
+            ripgrepServer['addGlobArgs'](actual, [inputPath], excludeFlag);
+            expect(expected).to.have.deep.members([...actual]);
         });
     });
 
@@ -1036,9 +1036,9 @@ describe('#patternToGlobCLIArguments', function (): void {
             const expected = [
                 `--glob=${excludePrefix}**/${filename}/**/*`,
             ];
-
-            const actual = ripgrepServer['patternToGlobCLIArguments'](inputPath, excludeFlag);
-            expect(expected).to.have.deep.members(actual);
+            const actual = new Set<string>();
+            ripgrepServer['addGlobArgs'](actual, [inputPath], excludeFlag);
+            expect(expected).to.have.deep.members([...actual]);
         });
     });
 
@@ -1050,17 +1050,17 @@ describe('#patternToGlobCLIArguments', function (): void {
             const expected = [
                 `--glob=${excludePrefix}**/${filename}/**/*`,
             ];
-
-            const actual = ripgrepServer['patternToGlobCLIArguments'](inputPath, excludeFlag);
-            expect(expected).to.have.deep.members(actual);
+            const actual = new Set<string>();
+            ripgrepServer['addGlobArgs'](actual, [inputPath], excludeFlag);
+            expect(expected).to.have.deep.members([...actual]);
         });
     });
 });
 
 function checkResolvedPathForPattern(pattern: string, expectedPath: string): void {
-    const options = {include: [pattern]};
-    const searchPaths = ripgrepServer['resolveSearchPathsFromIncludes']([rootDirA], options);
-    expect(searchPaths.length).equal(1);
-    expect(options.include.length).equals(0);
-    expect(searchPaths[0]).equal(expectedPath);
+    const options = { include: [pattern] };
+    const searchPaths = ripgrepServer['extractSearchPathsFromIncludes']([rootDirA], options);
+    expect(searchPaths.length).equal(1, 'searchPath result should contain exactly one element');
+    expect(options.include.length).equals(0, 'options.include should be empty');
+    expect(searchPaths[0]).equal(path.normalize(expectedPath));
 }
