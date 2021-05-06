@@ -24,7 +24,7 @@
 
 import { UUID } from '@theia/core/shared/@phosphor/coreutils';
 import { illegalArgument } from '../common/errors';
-import * as theia from '@theia/plugin';
+import type * as theia from '@theia/plugin';
 import { URI } from '@theia/core/shared/vscode-uri';
 import { relative } from '../common/paths-util';
 import { startsWithIgnoreCase } from '@theia/core/lib/common/strings';
@@ -831,16 +831,7 @@ export enum DebugConsoleMode {
     MergeWithParent = 1
 }
 
-export class DiagnosticRelatedInformation {
-    location: Location;
-    message: string;
-
-    constructor(location: Location, message: string) {
-        this.location = location;
-        this.message = message;
-    }
-}
-
+@es5ClassCompat
 export class Location {
     uri: URI;
     range: Range;
@@ -863,6 +854,17 @@ export class Location {
         }
         return Range.isRange((<Location>thing).range)
             && URI.isUri((<Location>thing).uri);
+    }
+}
+
+@es5ClassCompat
+export class DiagnosticRelatedInformation {
+    location: Location;
+    message: string;
+
+    constructor(location: Location, message: string) {
+        this.location = location;
+        this.message = message;
     }
 }
 
@@ -1011,6 +1013,7 @@ export class DocumentLink {
     }
 }
 
+@es5ClassCompat
 export class CodeLens {
 
     range: Range;
@@ -1253,6 +1256,7 @@ export class WorkspaceEdit implements theia.WorkspaceEdit {
     }
 }
 
+@es5ClassCompat
 export class TreeItem {
 
     label?: string | theia.TreeItemLabel;
@@ -1512,6 +1516,7 @@ export enum ProgressLocation {
     Notification = 15
 }
 
+@es5ClassCompat
 export class ProcessExecution {
     private executionProcess: string;
     private arguments: string[];
@@ -1591,6 +1596,7 @@ export enum TaskRevealKind {
     Never = 3
 }
 
+@es5ClassCompat
 export class ShellExecution {
     private shellCommandLine: string;
     private shellCommand: string | theia.ShellQuotedString;
@@ -1918,6 +1924,7 @@ export class Task2 extends Task {
     detail?: string;
 }
 
+@es5ClassCompat
 export class DebugAdapterExecutable {
     /**
      * The command or path of the debug adapter executable.
