@@ -17,19 +17,31 @@
 import { ContainerModule, decorate, injectable } from 'inversify';
 import { ApplicationPackage } from '@theia/application-package';
 import {
-    bindContributionProvider, MessageService, MessageClient, ConnectionHandler, JsonRpcConnectionHandler,
-    CommandService, commandServicePath, messageServicePath
+    bindContributionProvider,
+    CommandService,
+    commandServicePath,
+    ConnectionHandler,
+    JsonRpcConnectionHandler,
+    MessageClient,
+    MessageService,
+    messageServicePath
 } from '../common';
-import { BackendApplication, BackendApplicationContribution, BackendApplicationCliContribution } from './backend-application';
-import { CliManager, CliContribution } from './cli';
+import {
+    BackendApplication,
+    BackendApplicationCliContribution,
+    BackendApplicationContribution
+} from './backend-application';
+import { CliContribution, CliManager } from './cli';
 import { IPCConnectionProvider } from './messaging';
 import { ApplicationServerImpl } from './application-server';
-import { ApplicationServer, applicationPath } from '../common/application-protocol';
-import { EnvVariablesServer, envVariablesPath } from './../common/env-variables';
+import { applicationPath, ApplicationServer } from '../common/application-protocol';
+import { envVariablesPath, EnvVariablesServer } from './../common/env-variables';
 import { EnvVariablesServerImpl } from './env-variables';
 import { ConnectionContainerModule } from './messaging/connection-container-module';
 import { QuickPickService, quickPickServicePath } from '../common/quick-pick-service';
 import { WsRequestValidator, WsRequestValidatorContribution } from './ws-request-validators';
+import { KeytarService, keytarServicePath } from '../common/keytar-protocol';
+import { KeytarServiceImpl } from './keytar-server';
 
 decorate(injectable(), ApplicationPackage);
 
@@ -85,4 +97,8 @@ export const backendApplicationModule = new ContainerModule(bind => {
 
     bind(WsRequestValidator).toSelf().inSingletonScope();
     bindContributionProvider(bind, WsRequestValidatorContribution);
+    bind(KeytarService).to(KeytarServiceImpl).inSingletonScope();
+    bind(ConnectionHandler).toDynamicValue(ctx =>
+        new JsonRpcConnectionHandler(keytarServicePath, () => ctx.container.get<KeytarService>(KeytarService))
+    ).inSingletonScope();
 });
