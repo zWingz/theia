@@ -40,7 +40,7 @@ import { FileResourceResolver, FileSystemPreferences } from '@theia/filesystem/l
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { SearchInWorkspaceResult, SearchInWorkspaceOptions, SearchMatch } from '../common/search-in-workspace-interface';
 import { SearchInWorkspaceService } from './search-in-workspace-service';
-import { MEMORY_TEXT } from './in-memory-text-resource';
+import { MEMORY_TEXT } from '@theia/core/lib/common';
 import URI from '@theia/core/lib/common/uri';
 import * as React from '@theia/core/shared/react';
 import { SearchInWorkspacePreferences } from './search-in-workspace-preferences';
@@ -220,6 +220,10 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     set replaceTerm(rt: string) {
         this._replaceTerm = rt;
         this.update();
+    }
+
+    get isReplacing(): boolean {
+        return this._replaceTerm !== '' && this._showReplaceButtons;
     }
 
     get onChange(): Event<Map<string, SearchInWorkspaceRootFolderNode>> {
@@ -938,8 +942,8 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     }
 
     protected renderMatchLinePart(node: SearchInWorkspaceResultLineNode): React.ReactNode {
-        const replaceTerm = this._replaceTerm !== '' && this._showReplaceButtons ? <span className='replace-term'>{this._replaceTerm}</span> : '';
-        const className = `match${this._showReplaceButtons ? ' strike-through' : ''}`;
+        const replaceTerm = this.isReplacing ? <span className='replace-term'>{this._replaceTerm}</span> : '';
+        const className = `match${this.isReplacing ? ' strike-through' : ''}`;
         const match = typeof node.lineText === 'string' ?
             node.lineText.substr(node.character - 1, node.length)
             : node.lineText.text.substr(node.lineText.character - 1, node.length);
@@ -963,7 +967,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     protected async doOpen(node: SearchInWorkspaceResultLineNode, preview: boolean = false): Promise<EditorWidget> {
         let fileUri: URI;
         const resultNode = node.parent;
-        if (resultNode && this._showReplaceButtons && preview) {
+        if (resultNode && this.isReplacing && preview) {
             const leftUri = new URI(node.fileUri);
             const rightUri = await this.createReplacePreview(resultNode);
             fileUri = DiffUris.encode(leftUri, rightUri);
@@ -971,7 +975,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
             fileUri = new URI(node.fileUri);
         }
 
-        const opts: EditorOpenerOptions | undefined = !DiffUris.isDiffUri(fileUri) ? {
+        const opts: EditorOpenerOptions = {
             selection: {
                 start: {
                     line: node.line - 1,
@@ -983,7 +987,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
                 }
             },
             mode: 'reveal'
-        } : undefined;
+        };
 
         const editorWidget = await this.editorManager.open(fileUri, opts);
 
