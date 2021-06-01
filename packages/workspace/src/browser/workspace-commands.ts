@@ -37,13 +37,14 @@ import { WorkspaceInputDialog } from './workspace-input-dialog';
 import { Emitter, Event } from '@theia/core/lib/common';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileStat } from '@theia/filesystem/lib/common/files';
+import { nls } from '@theia/core/lib/browser/nls';
 
 const validFilename: (arg: string) => boolean = require('valid-filename');
 
 export namespace WorkspaceCommands {
 
     const WORKSPACE_CATEGORY = 'Workspace';
-    const FILE_CATEGORY = 'File';
+    const FILE_CATEGORY = nls.localize('vscode/menubarControl/mFile', 'File');
 
     // On Linux and Windows, both files and folders cannot be opened at the same time in electron.
     // `OPEN_FILE` and `OPEN_FOLDER` must be available only on Linux and Windows in electron.
@@ -52,44 +53,44 @@ export namespace WorkspaceCommands {
     export const OPEN: Command & { dialogLabel: string } = {
         id: 'workspace:open',
         category: FILE_CATEGORY,
-        label: 'Open...',
-        dialogLabel: 'Open'
+        label: nls.localize('vscode/workspaceActions/openFileFolder', 'Open...'),
+        dialogLabel: nls.localize('vscode/dialogMainService/open', 'Open')
     };
     // No `label`. Otherwise, it shows up in the `Command Palette`.
     export const OPEN_FILE: Command & { dialogLabel: string } = {
         id: 'workspace:openFile',
         category: FILE_CATEGORY,
-        dialogLabel: 'Open File'
+        dialogLabel: nls.localize('vscode/fileActions.contribution/openFile', 'Open File')
     };
     export const OPEN_FOLDER: Command & { dialogLabel: string } = {
         id: 'workspace:openFolder',
-        dialogLabel: 'Open Folder' // No `label`. Otherwise, it shows up in the `Command Palette`.
+        dialogLabel: nls.localize('vscode/dialogMainService/openFolder', 'Open Folder') // No `label`. Otherwise, it shows up in the `Command Palette`.
     };
     export const OPEN_WORKSPACE: Command & { dialogLabel: string } = {
         id: 'workspace:openWorkspace',
         category: FILE_CATEGORY,
-        label: 'Open Workspace...',
-        dialogLabel: 'Open Workspace'
+        label: nls.localize('vscode/workspaceActions/openWorkspaceAction', 'Open Workspace...'),
+        dialogLabel: nls.localize('vscode/dialogMainService/openWorkspaceTitle', 'Open Workspace')
     };
     export const OPEN_RECENT_WORKSPACE: Command = {
         id: 'workspace:openRecent',
         category: FILE_CATEGORY,
-        label: 'Open Recent Workspace...'
+        label: nls.localize('vscode/windowActions/openRecent', 'Open Recent Workspace...')
     };
     export const CLOSE: Command = {
         id: 'workspace:close',
         category: WORKSPACE_CATEGORY,
-        label: 'Close Workspace'
+        label: nls.localize('vscode/workspaceActions/closeWorkspace', 'Close Workspace')
     };
     export const NEW_FILE: Command = {
         id: 'file.newFile',
         category: FILE_CATEGORY,
-        label: 'New File'
+        label: nls.localize('vscode/fileActions.contribution/newFile', 'New File')
     };
     export const NEW_FOLDER: Command = {
         id: 'file.newFolder',
         category: FILE_CATEGORY,
-        label: 'New Folder'
+        label: nls.localize('vscode/fileActions/newFolder', 'New Folder')
     };
     export const FILE_OPEN_WITH = (opener: OpenHandler): Command => ({
         id: `file.openWith.${opener.id}`
@@ -97,47 +98,47 @@ export namespace WorkspaceCommands {
     export const FILE_RENAME: Command = {
         id: 'file.rename',
         category: FILE_CATEGORY,
-        label: 'Rename'
+        label: nls.localize('vscode/fileActions/rename', 'Rename')
     };
     export const FILE_DELETE: Command = {
         id: 'file.delete',
         category: FILE_CATEGORY,
-        label: 'Delete'
+        label: nls.localize('vscode/fileActions/delete', 'Delete')
     };
     export const FILE_DUPLICATE: Command = {
         id: 'file.duplicate',
         category: FILE_CATEGORY,
-        label: 'Duplicate'
+        label: nls.localize('file.duplicate', 'Duplicate')
     };
     export const FILE_COMPARE: Command = {
         id: 'file.compare',
         category: FILE_CATEGORY,
-        label: 'Compare with Each Other'
+        label: nls.localize('vscode/fileActions.contribution/compareSelected', 'Compare with Each Other')
     };
     export const ADD_FOLDER: Command = {
         id: 'workspace:addFolder',
         category: WORKSPACE_CATEGORY,
-        label: 'Add Folder to Workspace...'
+        label: nls.localize('vscode/workspaceCommands/addFolderToWorkspace', 'Add Folder to Workspace...')
     };
     export const REMOVE_FOLDER: Command = {
         id: 'workspace:removeFolder',
         category: WORKSPACE_CATEGORY,
-        label: 'Remove Folder from Workspace'
+        label: nls.localize('vscode/fileCommands/removeFolderFromWorkspace', 'Remove Folder from Workspace')
     };
     export const SAVE_WORKSPACE_AS: Command = {
         id: 'workspace:saveAs',
         category: WORKSPACE_CATEGORY,
-        label: 'Save Workspace As...'
+        label: nls.localize('vscode/workspaceActions/saveWorkspaceAsAction', 'Save Workspace As...')
     };
     export const OPEN_WORKSPACE_FILE: Command = {
         id: 'workspace:openConfigFile',
         category: WORKSPACE_CATEGORY,
-        label: 'Open Workspace Configuration File'
+        label: nls.localize('vscode/workspaceActions/openWorkspaceConfigFile', 'Open Workspace Configuration File')
     };
     export const SAVE_AS: Command = {
         id: 'file.saveAs',
         category: 'File',
-        label: 'Save As...',
+        label: nls.localize('vscode/fileCommands/saveAs', 'Save As...')
     };
 }
 

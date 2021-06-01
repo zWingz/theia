@@ -25,6 +25,9 @@ import { FrontendApplicationStateService } from './frontend-application-state';
 import { preventNavigation, parseCssTime, animationFrame } from './browser';
 import { CorePreferences } from './core-preferences';
 import { WindowService } from './window/window-service';
+import { loadTranslations } from './nls';
+
+loadTranslations();
 
 /**
  * Clients can implement to get a callback for contributing widgets to a shell on start.

@@ -26,7 +26,7 @@ export interface MenuAction {
     /**
      * The command to execute.
      */
-    commandId: string
+    commandId: string;
     /**
      * In addition to the mandatory command property, an alternative command can be defined.
      * It will be shown and invoked when pressing Alt while opening a menu.
@@ -35,22 +35,22 @@ export interface MenuAction {
     /**
      * A specific label for this action. If not specified the command label or command id will be used.
      */
-    label?: string
+    label?: string;
     /**
      * Icon class(es). If not specified the icon class associated with the specified command
      * (i.e. `command.iconClass`) will be used if it exists.
      */
-    icon?: string
+    icon?: string;
     /**
      * Menu entries are sorted in ascending order based on their `order` strings. If omitted the determined
      * label will be used instead.
      */
-    order?: string
+    order?: string;
     /**
      * Optional expression which will be evaluated by the {@link ContextKeyService} to determine visibility
      * of the action, e.g. `resourceLangId == markdown`.
      */
-    when?: string
+    when?: string;
 }
 
 export namespace MenuAction {

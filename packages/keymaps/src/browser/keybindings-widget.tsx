@@ -492,8 +492,10 @@ export class KeybindingWidget extends ReactWidget {
      */
     protected getCommandLabel(command: Command): string {
         if (command.label) {
+            const label = command.label;
+            const category = command.category;
             // Prefix the command label with the category if it exists, else return the simple label.
-            return command.category ? `${command.category}: ${command.label}` : command.label;
+            return category ? `${category}: ${label}` : label;
         }
         return command.id;
     }
