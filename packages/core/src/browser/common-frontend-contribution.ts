@@ -53,7 +53,7 @@ import { UTF8 } from '../common/encodings';
 import { EnvVariablesServer } from '../common/env-variables';
 import { AuthenticationService } from './authentication-service';
 import { FormatType } from './saveable';
-import { locale, localeId, LocalizationProvider } from '../common/i18n/localization';
+import { locale, localeId, AsyncLocalizationProvider } from '../common/i18n/localization';
 import { nls } from './nls';
 
 export namespace CommonMenus {
@@ -297,7 +297,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         @inject(MessageService) protected readonly messageService: MessageService,
         @inject(OpenerService) protected readonly openerService: OpenerService,
         @inject(AboutDialog) protected readonly aboutDialog: AboutDialog,
-        @inject(LocalizationProvider) protected readonly localizationProvider: LocalizationProvider
+        @inject(AsyncLocalizationProvider) protected readonly localizationProvider: AsyncLocalizationProvider
     ) { }
 
     @inject(ContextKeyService)

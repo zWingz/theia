@@ -22,9 +22,13 @@ export function loadVsRequire(context: any): Promise<any> {
     // Monaco uses a custom amd loader that over-rides node's require.
     // Keep a reference to an original require so we can restore it after executing the amd loader file.
     const originalRequire = context.require;
-
-    return new Promise<any>(resolve =>
-        window.addEventListener('load', () => {
+    return new Promise(resolve => {
+        if (document.readyState === 'loading') {
+            window.addEventListener('load', attachVsLoader, { once: true });
+        } else {
+            attachVsLoader();
+        }
+        function attachVsLoader(): void {
             const vsLoader = document.createElement('script');
             vsLoader.type = 'text/javascript';
             vsLoader.src = './vs/loader.js';
@@ -38,8 +42,8 @@ export function loadVsRequire(context: any): Promise<any> {
                 resolve(amdRequire);
             });
             document.body.appendChild(vsLoader);
-        }, { once: true })
-    );
+        };
+    });
 }
 
 export function loadMonaco(vsRequire: any): Promise<void> {

@@ -56,7 +56,7 @@ class TranslationContainer {
     }
 }
 
-const container: TranslationContainer = new TranslationContainer();
+const container = new TranslationContainer();
 
 export namespace nls {
 

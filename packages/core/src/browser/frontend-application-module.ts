@@ -99,7 +99,6 @@ import { EncodingRegistry } from './encoding-registry';
 import { EncodingService } from '../common/encoding-service';
 import { AuthenticationService, AuthenticationServiceImpl } from '../browser/authentication-service';
 import { DecorationsService, DecorationsServiceImpl } from './decorations-service';
-import { localizationPath, LocalizationProvider } from '../common/i18n/localization';
 import { keytarServicePath, KeytarService } from '../common/keytar-protocol';
 import { CredentialsService, CredentialsServiceImpl } from './credentials-service';
 
@@ -348,10 +347,6 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
     bind(AuthenticationService).to(AuthenticationServiceImpl).inSingletonScope();
     bind(DecorationsService).to(DecorationsServiceImpl).inSingletonScope();
 
-    bind(LocalizationProvider).toDynamicValue(ctx => {
-        const connection = ctx.container.get(WebSocketConnectionProvider);
-        return connection.createProxy<LocalizationProvider>(localizationPath);
-    }).inSingletonScope();
     bind(KeytarService).toDynamicValue(ctx => {
         const connection = ctx.container.get(WebSocketConnectionProvider);
         return connection.createProxy<KeytarService>(keytarServicePath);

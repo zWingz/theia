@@ -30,11 +30,6 @@ import { EnvVariablesServerImpl } from './env-variables';
 import { ConnectionContainerModule } from './messaging/connection-container-module';
 import { QuickPickService, quickPickServicePath } from '../common/quick-pick-service';
 import { WsRequestValidator, WsRequestValidatorContribution } from './ws-request-validators';
-import { LocalizationProvider } from './i18n/localization-provider';
-import { LocalizationProviderImpl } from './i18n/localization-provider';
-import { localizationPath } from '../common/i18n/localization';
-import { LocalizationContribution, LocalizationRegistry, TheiaLocalizationContribution } from './i18n/localization-contribution';
-import { LocalizationBackendContribution } from './i18n/localization-backend-contribution';
 import { KeytarService, keytarServicePath } from '../common/keytar-protocol';
 import { KeytarServiceImpl } from './keytar-server';
 
@@ -103,19 +98,6 @@ export const backendApplicationModule = new ContainerModule(bind => {
     bind(WsRequestValidator).toSelf().inSingletonScope();
     bindContributionProvider(bind, WsRequestValidatorContribution);
 
-    bind(LocalizationProvider).to(LocalizationProviderImpl).inSingletonScope();
-    bind(ConnectionHandler).toDynamicValue(ctx =>
-        new JsonRpcConnectionHandler(localizationPath, () => {
-            const localizationProvider = ctx.container.get<LocalizationProvider>(LocalizationProvider);
-            return localizationProvider;
-        })
-    ).inSingletonScope();
-    bind(LocalizationRegistry).toSelf().inSingletonScope();
-    bindContributionProvider(bind, LocalizationContribution);
-    bind(TheiaLocalizationContribution).toSelf().inSingletonScope();
-    bind(LocalizationContribution).toService(TheiaLocalizationContribution);
-    bind(LocalizationBackendContribution).toSelf().inSingletonScope();
-    bind(BackendApplicationContribution).toService(LocalizationBackendContribution);
     bind(KeytarService).to(KeytarServiceImpl).inSingletonScope();
     bind(ConnectionHandler).toDynamicValue(ctx =>
         new JsonRpcConnectionHandler(keytarServicePath, () => ctx.container.get<KeytarService>(KeytarService))

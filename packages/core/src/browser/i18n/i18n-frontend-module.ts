@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2021 TypeFox and others.
+ * Copyright (C) 2021 Ericsson and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,21 +14,12 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-export const localizationPath = '/services/i18n';
-export const localeId = 'localeId';
-export const locale = typeof window === 'object' && window.localStorage.getItem(localeId) || 'en';
+import { ContainerModule } from 'inversify';
+import { AsyncLocalizationProvider, localizationPath } from '../../common/i18n/localization';
+import { WebSocketConnectionProvider } from '../messaging/ws-connection-provider';
 
-export const AsyncLocalizationProvider = Symbol('AsyncLocalizationProvider');
-export interface AsyncLocalizationProvider {
-    getCurrentLanguage(): Promise<string>
-    setCurrentLanguage(languageId: string): Promise<void>
-    getAvailableLanguages(): Promise<string[]>
-    loadLocalization(languageId: string): Promise<Localization>
-}
-
-export interface Localization {
-    languageId: string;
-    languageName?: string;
-    localizedLanguageName?: string;
-    translations: { [key: string]: string };
-}
+export default new ContainerModule(bind => {
+    bind(AsyncLocalizationProvider).toDynamicValue(
+        ctx => ctx.container.get(WebSocketConnectionProvider).createProxy(localizationPath)
+    ).inSingletonScope();
+});

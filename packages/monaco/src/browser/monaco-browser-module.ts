@@ -21,8 +21,5 @@ export { ContainerModule };
 
 export default loadVsRequire(window)
     .then(vsRequire => loadMonaco(vsRequire))
-    .then(() =>
-        import('./monaco-frontend-module')
-    ).then(module =>
-        module.default
-    );
+    .then(() => import('./monaco-frontend-module'))
+    .then(jsModule => jsModule.default);
