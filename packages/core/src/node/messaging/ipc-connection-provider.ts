@@ -83,7 +83,7 @@ export class IPCConnectionProvider {
             info: (message: string) => this.logger.info(`[${options.serverName}: ${childProcess.pid}] ${message}`),
             log: (message: string) => this.logger.info(`[${options.serverName}: ${childProcess.pid}] ${message}`)
         });
-        connection.trace(Trace.Off, {
+        connection.trace(Trace.Verbose, { // TODO: possibly make tracing verbosity configurable.
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             log: (message: any, data?: string) => this.logger.info(`[${options.serverName}: ${childProcess.pid}] ${message}` + (typeof data === 'string' ? ' ' + data : ''))
         });
