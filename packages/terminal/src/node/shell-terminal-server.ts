@@ -35,7 +35,7 @@ export class ShellTerminalServer extends BaseTerminalServer {
 
     async create(options: IShellTerminalServerOptions): Promise<number> {
         try {
-            options.env = this.mergeProcessEnv(options.env);
+            options.env = this.mergeProcessEnv(options.env ?? {});
             this.mergedCollection.applyToProcessEnvironment(options.env);
             const term = this.shellFactory(options);
             this.postCreate(term);
@@ -51,7 +51,7 @@ export class ShellTerminalServer extends BaseTerminalServer {
      *
      * @param env desired environment to merge with `process.env`.
      */
-    protected mergeProcessEnv(env: Record<string, string | null> = {}): Record<string, string> {
+    protected mergeProcessEnv(env: Record<string, string | null>): Record<string, string> {
         return mergeProcessEnv(env);
     }
 

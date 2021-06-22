@@ -26,19 +26,35 @@ describe('ShellProcess', function (): void {
         this.timeout(5000);
         const PATH = 'PATH';
 
-        it('should validate the presence of a known process variable', async function (): Promise<void> {
-            const mergedEnv = mergeProcessEnv();
+        it('should validate the presence of a known process variable', function (): void {
+            const mergedEnv = mergeProcessEnv({});
             expect(mergedEnv[PATH]).length.greaterThan(0);
         });
 
-        it('should be possible to remove a known process variable', async function (): Promise<void> {
+        for (const platform of ['linux', 'darwin'] as const) {
+            it(`should conserve case for keys on "${platform}"`, function (): void {
+                process.env['TestKey'] = 'test_value';
+                const mergedEnv = mergeProcessEnv({}, { platform });
+                expect(mergedEnv['TestKey']).equal('test_value');
+                expect(mergedEnv['TESTKEY']).equal(undefined);
+            });
+        }
+
+        it('should uppercase keys on "win32"', function (): void {
+            process.env['TestKey'] = 'test_value';
+            const mergedEnv = mergeProcessEnv({}, { platform: 'win32' });
+            expect(mergedEnv['TestKey']).equal(undefined);
+            expect(mergedEnv['TESTKEY']).equal('test_value');
+        });
+
+        it('should be possible to remove a known process variable', function (): void {
             // eslint-disable-next-line no-null/no-null
             const customizedEnv = { [PATH]: null };
             const mergedEnv = mergeProcessEnv(customizedEnv);
-            expect(mergedEnv[PATH]).to.equal(undefined);
+            expect(mergedEnv[PATH]).equal(undefined);
         });
 
-        it('should be possible to override the value of a known process variable', async function (): Promise<void> {
+        it('should be possible to override the value of a known process variable', function (): void {
             const expectedValue = '/path/to/one';
             const customizedEnv = { [PATH]: expectedValue };
 
@@ -46,7 +62,7 @@ describe('ShellProcess', function (): void {
             expect(mergedEnv[PATH]).equals(expectedValue);
         });
 
-        it('should not produce a different result when merging a previous result', async function (): Promise<void> {
+        it('should not produce a different result when merging a previous result', function (): void {
             const variableName = 'NEW_VARIABLE';
             const expectedValue = 'true';
             const customizedEnv = { [variableName]: expectedValue };
@@ -55,7 +71,7 @@ describe('ShellProcess', function (): void {
             expect(mergedEnv[variableName]).equals(expectedValue);
         });
 
-        it('should not produce a different result when performing multiple merges', async function (): Promise<void> {
+        it('should not produce a different result when performing multiple merges', function (): void {
             const variableName = 'NEW_VARIABLE';
             const expectedValue = 'true';
             const customizedEnv = { [variableName]: expectedValue };
