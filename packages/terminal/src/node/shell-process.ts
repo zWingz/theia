@@ -21,6 +21,7 @@ import { TerminalProcess, TerminalProcessOptions, ProcessManager, MultiRingBuffe
 import { isWindows, isOSX, OS } from '@theia/core/lib/common';
 import URI from '@theia/core/lib/common/uri';
 import { FileUri } from '@theia/core/lib/node/file-uri';
+import { EnvironmentUtils } from '@theia/core/lib/node/environment-utils';
 import { parseArgs } from '@theia/process/lib/node/utils';
 import { IShellTerminalPreferences } from '../common/shell-terminal-protocol';
 
@@ -58,7 +59,8 @@ export class ShellProcess extends TerminalProcess {
         @inject(ShellProcessOptions) options: ShellProcessOptions,
         @inject(ProcessManager) processManager: ProcessManager,
         @inject(MultiRingBuffer) ringBuffer: MultiRingBuffer,
-        @inject(ILogger) @named('terminal') logger: ILogger
+        @inject(ILogger) @named('terminal') logger: ILogger,
+        @inject(EnvironmentUtils) environmentUtils: EnvironmentUtils,
     ) {
         super(<TerminalProcessOptions>{
             command: options.shell || ShellProcess.getShellExecutablePath(options.shellPreferences),
@@ -68,7 +70,7 @@ export class ShellProcess extends TerminalProcess {
                 cols: options.cols || ShellProcess.defaultCols,
                 rows: options.rows || ShellProcess.defaultRows,
                 cwd: getRootPath(options.rootURI),
-                env: mergeProcessEnv(options.env ?? {}),
+                env: environmentUtils.mergeProcessEnv(options.env ?? {}),
             },
             isPseudo: options.isPseudo,
         }, processManager, ringBuffer, logger);
@@ -101,57 +103,4 @@ export class ShellProcess extends TerminalProcess {
             return [];
         }
     }
-}
-
-export interface MergeProcessEnvOptions {
-    platform?: NodeJS.Platform
-}
-
-/**
- * Merges a given record of environment variables with the process environment variables.
- * Empty string values will not be included in the final env.
- * @param env desired environment to merge with `process.env`.
- *
- * @returns a normalized merged record of valid environment variables.
- */
-export function mergeProcessEnv(env: Record<string, string | null>, options: MergeProcessEnvOptions = {}): Record<string, string> {
-    env = normalizeEnv(env, { platform: options.platform });
-    // eslint-disable-next-line no-null/no-null
-    const mergedEnv: Record<string, string> = Object.create(null);
-    for (const [key, value] of Object.entries(normalizeEnv(process.env, { platform: options.platform }))) {
-        // Ignore keys from `process.env` that are overridden in `env`. Accept only non-empty strings.
-        if (!(key in env) && value) { mergedEnv[key] = value; }
-    }
-    for (const [key, value] of Object.entries(env)) {
-        // Accept only non-empty strings from the `env` object.
-        if (value) { mergedEnv[key] = value; }
-    }
-    return mergedEnv;
-}
-
-export interface NormalizeEnvOptions {
-    platform?: NodeJS.Platform
-}
-
-/**
- * Normalize an environment map for a given OS.
- *
- * On Windows it will uppercase all keys.
- *
- * @param env Environment variables map to normalize.
- * @param platform Platform to normalize for.
- * @returns New object with normalized environment variables.
- */
-export function normalizeEnv<T>(env: Record<string, T>, options: NormalizeEnvOptions = {}): Record<string, T> {
-    const {
-        platform = process.platform
-    } = options;
-    if (platform !== 'win32') {
-        return { ...env };
-    }
-    const normalized: Record<string, T> = {};
-    for (const [key, value] of Object.entries(env)) {
-        normalized[key.toUpperCase()] = value;
-    }
-    return normalized;
 }

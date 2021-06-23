@@ -15,34 +15,42 @@
  ********************************************************************************/
 
 import * as chai from 'chai';
-import { mergeProcessEnv } from './shell-process';
+import { EnvironmentUtils } from './environment-utils';
 
 const expect = chai.expect;
 
-describe('ShellProcess', function (): void {
+describe('EnvironmentUtils', function (): void {
 
     describe('#mergeProcessEnv', function (): void {
-
         this.timeout(5000);
+
+        let utils: EnvironmentUtils;
+
         const PATH = 'PATH';
 
+        beforeEach(function (): void {
+            utils = new EnvironmentUtils();
+        });
+
         it('should validate the presence of a known process variable', function (): void {
-            const mergedEnv = mergeProcessEnv({});
+            const mergedEnv = utils.mergeProcessEnv({});
             expect(mergedEnv[PATH]).length.greaterThan(0);
         });
 
         for (const platform of ['linux', 'darwin'] as const) {
             it(`should conserve case for keys on "${platform}"`, function (): void {
+                utils['platform'] = platform;
                 process.env['TestKey'] = 'test_value';
-                const mergedEnv = mergeProcessEnv({}, { platform });
+                const mergedEnv = utils.mergeProcessEnv({});
                 expect(mergedEnv['TestKey']).equal('test_value');
                 expect(mergedEnv['TESTKEY']).equal(undefined);
             });
         }
 
         it('should uppercase keys on "win32"', function (): void {
+            utils['platform'] = 'win32';
             process.env['TestKey'] = 'test_value';
-            const mergedEnv = mergeProcessEnv({}, { platform: 'win32' });
+            const mergedEnv = utils.mergeProcessEnv({});
             expect(mergedEnv['TestKey']).equal(undefined);
             expect(mergedEnv['TESTKEY']).equal('test_value');
         });
@@ -50,7 +58,7 @@ describe('ShellProcess', function (): void {
         it('should be possible to remove a known process variable', function (): void {
             // eslint-disable-next-line no-null/no-null
             const customizedEnv = { [PATH]: null };
-            const mergedEnv = mergeProcessEnv(customizedEnv);
+            const mergedEnv = utils.mergeProcessEnv(customizedEnv);
             expect(mergedEnv[PATH]).equal(undefined);
         });
 
@@ -58,7 +66,7 @@ describe('ShellProcess', function (): void {
             const expectedValue = '/path/to/one';
             const customizedEnv = { [PATH]: expectedValue };
 
-            const mergedEnv = mergeProcessEnv(customizedEnv);
+            const mergedEnv = utils.mergeProcessEnv(customizedEnv);
             expect(mergedEnv[PATH]).equals(expectedValue);
         });
 
@@ -67,7 +75,7 @@ describe('ShellProcess', function (): void {
             const expectedValue = 'true';
             const customizedEnv = { [variableName]: expectedValue };
 
-            const mergedEnv = mergeProcessEnv(customizedEnv);
+            const mergedEnv = utils.mergeProcessEnv(customizedEnv);
             expect(mergedEnv[variableName]).equals(expectedValue);
         });
 
@@ -76,8 +84,8 @@ describe('ShellProcess', function (): void {
             const expectedValue = 'true';
             const customizedEnv = { [variableName]: expectedValue };
 
-            const mergedEnv = mergeProcessEnv(customizedEnv);
-            const mergedSecondPass = mergeProcessEnv(mergedEnv);
+            const mergedEnv = utils.mergeProcessEnv(customizedEnv);
+            const mergedSecondPass = utils.mergeProcessEnv(mergedEnv);
             expect(mergedEnv).to.deep.equal(mergedSecondPass);
         });
     });
